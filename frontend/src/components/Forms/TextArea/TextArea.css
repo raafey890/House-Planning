@@ -1,0 +1,18 @@
+.textarea-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 18px;
+}
+
+.custom-textarea {
+    min-height: 120px;
+    resize: vertical;
+
+    padding: 14px;
+
+    border-radius: 10px;
+    border: 1px solid #d1d5db;
+
+    outline: none;
+}

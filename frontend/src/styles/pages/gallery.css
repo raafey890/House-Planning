@@ -1,0 +1,77 @@
+.gallery-page {
+
+    min-height: 100vh;
+
+    padding: 100px 80px;
+
+}
+
+.gallery-header {
+
+    text-align: center;
+
+    margin-bottom: 80px;
+
+}
+
+.gallery-header h1 {
+
+    font-size: 4rem;
+
+    margin-bottom: 20px;
+
+}
+
+.gallery-grid {
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(auto-fit, minmax(300px, 1fr));
+
+    gap: 30px;
+
+}
+
+.gallery-card {
+
+    border-radius: 24px;
+
+    overflow: hidden;
+
+    background:
+        rgba(255,255,255,0.05);
+
+    border:
+        1px solid rgba(255,255,255,0.08);
+
+    transition: 0.3s ease;
+
+}
+
+.gallery-card:hover {
+
+    transform: translateY(-8px);
+
+}
+
+.gallery-image {
+
+    height: 260px;
+
+    background:
+        linear-gradient(
+            135deg,
+            #3b82f6,
+            #06b6d4
+        );
+
+}
+
+.gallery-card h3 {
+
+    padding: 24px;
+
+    font-size: 1.5rem;
+
+}

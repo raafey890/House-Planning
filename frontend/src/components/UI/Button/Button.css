@@ -1,0 +1,32 @@
+.custom-button {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 15px;
+    font-weight: 600;
+    transition: 0.3s;
+}
+
+.custom-button.primary {
+    background-color: #2563eb;
+    color: white;
+}
+
+.custom-button.primary:hover {
+    background-color: #1d4ed8;
+}
+
+.custom-button.secondary {
+    background-color: #e5e7eb;
+    color: black;
+}
+
+.custom-button.secondary:hover {
+    background-color: #d1d5db;
+}
+
+.custom-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}

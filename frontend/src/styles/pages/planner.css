@@ -1,0 +1,123 @@
+.planner-page {
+
+    min-height: 100vh;
+
+    padding: 100px 80px;
+
+}
+
+.planner-header {
+
+    text-align: center;
+
+    margin-bottom: 80px;
+
+}
+
+.planner-header h1 {
+
+    font-size: 4rem;
+
+    margin-bottom: 20px;
+
+    background:
+        linear-gradient(
+            to right,
+            #ffffff,
+            #60a5fa
+        );
+
+    background-clip: text;
+-webkit-background-clip: text;
+
+color: transparent;
+-webkit-text-fill-color: transparent;
+
+}
+
+.planner-header p {
+
+    max-width: 700px;
+
+    margin: auto;
+
+    font-size: 1.2rem;
+
+    color: #cbd5e1;
+
+}
+
+.planner-grid {
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(auto-fit, minmax(320px, 1fr));
+
+    gap: 32px;
+
+}
+
+.planner-card {
+
+    padding: 40px;
+
+    border-radius: 24px;
+
+    background:
+        rgba(255,255,255,0.06);
+
+    backdrop-filter: blur(14px);
+
+    border:
+        1px solid rgba(255,255,255,0.08);
+
+    transition: 0.3s ease;
+
+    position: relative;
+
+    overflow: hidden;
+
+}
+
+.planner-card::before {
+
+    content: "";
+
+    position: absolute;
+
+    inset: 0;
+
+    background:
+        linear-gradient(
+            135deg,
+            rgba(59,130,246,0.15),
+            transparent
+        );
+
+}
+
+.planner-card:hover {
+
+    transform: translateY(-10px);
+
+    box-shadow:
+        0 20px 40px rgba(0,0,0,0.4);
+
+}
+
+.planner-card h2 {
+
+    margin-bottom: 18px;
+
+    font-size: 1.8rem;
+
+}
+
+.planner-card p {
+
+    margin-bottom: 30px;
+
+    color: #cbd5e1;
+
+}

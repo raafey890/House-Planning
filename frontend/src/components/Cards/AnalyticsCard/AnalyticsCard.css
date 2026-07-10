@@ -1,0 +1,13 @@
+.analytics-card {
+    padding: 28px;
+
+    border-radius: 18px;
+
+    background-color: white;
+
+    box-shadow: 0px 4px 18px rgba(0,0,0,0.08);
+}
+
+.analytics-card h1 {
+    margin: 14px 0;
+}

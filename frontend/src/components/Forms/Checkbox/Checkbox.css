@@ -1,0 +1,9 @@
+.checkbox-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    margin-bottom: 18px;
+
+    font-size: 14px;
+}

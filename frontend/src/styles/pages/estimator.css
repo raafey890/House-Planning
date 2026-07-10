@@ -1,0 +1,77 @@
+.estimator-page {
+
+    min-height: 100vh;
+
+    padding: 100px 80px;
+
+}
+
+.estimator-header {
+
+    text-align: center;
+
+    margin-bottom: 70px;
+
+}
+
+.estimator-header h1 {
+
+    font-size: 4rem;
+
+    margin-bottom: 20px;
+
+}
+
+.estimator-card {
+
+    max-width: 750px;
+
+    margin: auto;
+
+    padding: 50px;
+
+    border-radius: 30px;
+
+    background:
+        rgba(255,255,255,0.06);
+
+    backdrop-filter: blur(14px);
+
+    border:
+        1px solid rgba(255,255,255,0.08);
+
+}
+
+.form-group {
+
+    margin-bottom: 28px;
+
+}
+
+.form-group label {
+
+    display: block;
+
+    margin-bottom: 12px;
+
+    font-weight: 600;
+
+}
+
+.form-input {
+
+    width: 100%;
+
+    padding: 16px;
+
+    border-radius: 14px;
+
+    background:
+        rgba(255,255,255,0.08);
+
+    border:
+        1px solid rgba(255,255,255,0.08);
+
+    color: white;
+
+}

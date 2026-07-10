@@ -1,0 +1,35 @@
+.input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+
+    margin-bottom: 18px;
+}
+
+.input-label {
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.custom-input {
+    padding: 12px 16px;
+
+    border: 1px solid #d1d5db;
+
+    border-radius: 10px;
+
+    font-size: 15px;
+
+    outline: none;
+
+    transition: 0.3s;
+}
+
+.custom-input:focus {
+    border-color: #2563eb;
+}
+
+.input-error {
+    color: red;
+    font-size: 13px;
+}

@@ -1,0 +1,10 @@
+.dark-theme {
+
+    --background-color: #0f172a;
+
+    --text-color: #ffffff;
+
+    --card-background:
+        rgba(255,255,255,0.08);
+
+}

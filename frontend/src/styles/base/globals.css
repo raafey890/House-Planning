@@ -1,0 +1,39 @@
+body {
+
+    background:
+        linear-gradient(
+            135deg,
+            #0f172a,
+            #111827,
+            #1e293b
+        );
+
+    color: white;
+
+    overflow-x: hidden;
+
+}
+
+a {
+
+    text-decoration: none;
+
+    color: inherit;
+
+}
+
+img {
+
+    max-width: 100%;
+
+    display: block;
+
+}
+
+button {
+
+    border: none;
+
+    outline: none;
+
+}

@@ -1,0 +1,15 @@
+.footer {
+
+    padding: 50px 20px;
+
+    text-align: center;
+
+    background:
+        rgba(255,255,255,0.04);
+
+    margin-top: 100px;
+
+    border-top:
+        1px solid rgba(255,255,255,0.08);
+
+}

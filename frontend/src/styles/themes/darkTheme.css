@@ -1,10 +1,10 @@
-.dark-theme {
-
-    --background-color: #0f172a;
-
-    --text-color: #ffffff;
-
-    --card-background:
-        rgba(255,255,255,0.08);
-
+/* Inherits from light theme variables for now, just inverting basics if needed. We'll stick to Light theme as primary for premium look */
+:root[data-theme="dark"] {
+  --color-primary: #f0f0f0;
+  --color-surface: #121212;
+  --color-surface-alt: #1a1a1a;
+  --color-surface-card: #1e1e1e;
+  --color-text-main: #e0e0e0;
+  --color-text-muted: #9e9e9e;
+  --color-border: #333333;
 }

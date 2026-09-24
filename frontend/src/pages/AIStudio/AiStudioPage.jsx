@@ -7,8 +7,6 @@ import AIOptions from "./AIOptions";
 import AIHistory from "./AIHistory";
 import AIResultCard from "./AIResultCard";
 
-import "../../styles/pages/aistudio.css";
-
 const AIStudioPage = () => {
 
     return (

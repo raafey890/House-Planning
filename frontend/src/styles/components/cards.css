@@ -1,23 +1,42 @@
 .card {
-
-    padding: 24px;
-
-    border-radius: 18px;
-
-    background:
-        rgba(255,255,255,0.06);
-
-    backdrop-filter: blur(12px);
-
-    border:
-        1px solid rgba(255,255,255,0.08);
-
-    transition: 0.3s ease;
-
+    background-color: var(--color-surface-card);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--color-border-light);
+    overflow: hidden;
+    transition: box-shadow var(--transition-base), transform var(--transition-base);
 }
 
 .card:hover {
+    box-shadow: var(--shadow-md);
+}
 
-    transform: translateY(-5px);
+.card-interactive:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
+}
 
+.card-header {
+    padding: var(--space-4) var(--space-6);
+    border-bottom: 1px solid var(--color-border-light);
+}
+
+.card-body {
+    padding: var(--space-6);
+}
+
+.card-footer {
+    padding: var(--space-4) var(--space-6);
+    background-color: var(--color-surface-alt);
+    border-top: 1px solid var(--color-border-light);
+}
+
+/* Premium architectural presentation card */
+.glass-card {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.4);
+    box-shadow: var(--shadow-float);
+    border-radius: var(--radius-xl);
 }

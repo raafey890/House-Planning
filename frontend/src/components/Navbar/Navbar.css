@@ -2,70 +2,72 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 18px 40px;
-    background-color: #111827;
-    color: white;
+    padding: var(--space-4) var(--space-6);
+    background-color: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: var(--color-primary);
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    border-bottom: 1px solid var(--color-border-light);
+    height: var(--header-height);
+}
+
+.navbar-logo {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    text-decoration: none;
+    color: var(--color-primary);
 }
 
 .navbar-logo h2 {
-    font-size: 24px;
-    font-weight: bold;
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin: 0;
+    font-family: var(--font-family-display);
+    letter-spacing: -0.01em;
 }
 
 .nav-links {
     display: flex;
-    gap: 24px;
+    gap: var(--space-6);
     list-style: none;
+    align-items: center;
 }
 
 .nav-links a {
-    color: white;
+    color: var(--color-text-muted);
     text-decoration: none;
-    font-size: 16px;
-    transition: 0.3s;
+    font-size: 0.95rem;
+    font-weight: 500;
+    transition: color var(--transition-fast);
 }
 
 .nav-links a:hover {
-    color: #38bdf8;
+    color: var(--color-accent);
 }
 
-.user-menu {
+.navbar-actions {
     display: flex;
-    gap: 12px;
-}
-
-.login-button,
-.premium-button,
-.mobile-menu-button {
-    padding: 10px 18px;
-    border: none;
-    cursor: pointer;
-    border-radius: 8px;
-    font-size: 14px;
-}
-
-.login-button {
-    background-color: white;
-    color: black;
-}
-
-.premium-button {
-    background-color: #38bdf8;
-    color: white;
+    align-items: center;
+    gap: var(--space-4);
 }
 
 .mobile-menu-button {
     display: none;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--color-primary);
 }
 
-@media screen and (max-width: 768px) {
-
+@media screen and (max-width: 992px) {
     .nav-links {
         display: none;
     }
-
     .mobile-menu-button {
         display: block;
     }
-
 }

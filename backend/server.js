@@ -2,26 +2,19 @@ const express = require("express");
 const dotenv = require("dotenv");
 const cors = require("cors");
 
-const connectDB = require("./config/db");
-
+// Database connection (MongoDB deprecated in Phase 2)
+// const connectDB = require("./config/db");
+// connectDB();
+dotenv.config();
 
 // ROUTES
-const authRoutes = require("./routes/authRoutes");
-const projectRoutes = require("./routes/projectRoutes");
-const estimationRoutes = require("./routes/estimationRoutes");
 const aiRoutes = require("./routes/aiRoutes");
 const {
     notFound,
     errorHandler,
 } = require("./middleware/errorMiddleware");
 
-
-dotenv.config();
-
-connectDB();
-
 const app = express();
-
 
 // MIDDLEWARE
 app.use(cors());
@@ -32,14 +25,7 @@ app.use(express.urlencoded({
     extended: true,
 }));
 
-
 // API ROUTES
-app.use("/api/auth", authRoutes);
-
-app.use("/api/projects", projectRoutes);
-
-app.use("/api/estimations", estimationRoutes);
-
 app.use("/api/ai", aiRoutes);
 
 

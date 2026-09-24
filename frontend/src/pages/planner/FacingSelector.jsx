@@ -1,54 +1,23 @@
-import { useState } from "react";
+import { usePlannerStore } from "../../store";
 
 function FacingSelector() {
-
-    const [facing, setFacing] =
-    useState("East");
+    const { facing, setField } = usePlannerStore();
 
     return (
-
         <div className="facing-selector">
-
-            <h2>
-                Facing Direction
-            </h2>
-
+            <h2>Facing Direction</h2>
             <select
                 value={facing}
-                onChange={(event) =>
-                    setFacing(
-                        event.target.value
-                    )
-                }
+                onChange={(e) => setField('facing', e.target.value)}
             >
-
-                <option>
-                    East
-                </option>
-
-                <option>
-                    West
-                </option>
-
-                <option>
-                    North
-                </option>
-
-                <option>
-                    South
-                </option>
-
+                <option value="East">East</option>
+                <option value="West">West</option>
+                <option value="North">North</option>
+                <option value="South">South</option>
             </select>
-
-            <p>
-                Selected Facing:
-                {facing}
-            </p>
-
+            <p>Selected Facing: {facing}</p>
         </div>
-
     );
-
 }
 
 export default FacingSelector;

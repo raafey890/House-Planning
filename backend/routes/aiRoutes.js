@@ -7,8 +7,10 @@ const {
 } = require("../controllers/aiController");
 
 
+const { protect } = require("../middleware/supabaseAuth");
+
 // GENERATE AI FLOOR PLAN
-router.post("/generate", generateFloorPlan);
+router.post("/generate", protect, generateFloorPlan);
 
 
 module.exports = router;

@@ -1,13 +1,14 @@
 import React from 'react';
-import { Menu, Plus, Bell } from 'lucide-react';
+import { Menu, Bell } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 
-const Topbar = ({ setMobileOpen, handleCreateProject, isCreating }) => {
+const Topbar = ({ setMobileOpen }) => {
     const location = useLocation();
     
     // Simple breadcrumb logic
     let pageTitle = "Dashboard";
     if (location.pathname.includes('/projects')) pageTitle = "Project Workspace";
+    if (location.pathname.includes('/planner')) pageTitle = "Project Planner";
     if (location.pathname.includes('/profile')) pageTitle = "Account Settings";
 
     return (
@@ -22,14 +23,6 @@ const Topbar = ({ setMobileOpen, handleCreateProject, isCreating }) => {
             <div className="topbar-actions">
                 <button className="btn btn-ghost btn-sm" style={{ padding: '8px' }} title="Notifications">
                     <Bell size={18} />
-                </button>
-                
-                <button 
-                    className="btn btn-primary btn-sm" 
-                    onClick={handleCreateProject}
-                    disabled={isCreating}
-                >
-                    {isCreating ? "Creating..." : <><Plus size={16} style={{marginRight: '4px'}}/> New Project</>}
                 </button>
             </div>
         </header>

@@ -1,36 +1,21 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import DashboardAnalytics from "./DashboardAnalytics";
-import RecentActivities from "./RecentActivities";
 import UserProjects from "./UserProjects";
 import { useProjectStore, useAuthStore } from "../../store";
 import { Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import toast from "react-hot-toast";
 
 const DashboardPage = () => {
-    const { fetchProjects, loading, createProject } = useProjectStore();
+    const { fetchProjects, loading } = useProjectStore();
     const { profile } = useAuthStore();
     const navigate = useNavigate();
-    const [isCreating, setIsCreating] = useState(false);
 
     useEffect(() => {
         fetchProjects();
     }, [fetchProjects]);
 
-    const handleCreateProject = async () => {
-        setIsCreating(true);
-        const name = `Project ${Math.floor(Math.random() * 1000)}`;
-        const toastId = toast.loading("Creating workspace...");
-        
-        try {
-            await createProject({ name, project_type: 'Residential' });
-            toast.success("Workspace created", { id: toastId });
-            navigate("/projects");
-        } catch (error) {
-            toast.error("Failed to create project", { id: toastId });
-        }
-        
-        setIsCreating(false);
+    const handleCreateProject = () => {
+        navigate("/planner");
     };
 
     const firstName = profile?.full_name?.split(' ')[0] || "Architect";
@@ -43,8 +28,8 @@ const DashboardPage = () => {
             </div>
             
             <div style={{ display: 'flex', gap: 'var(--space-4)', marginBottom: 'var(--space-8)' }}>
-                <button className="btn btn-primary" onClick={handleCreateProject} disabled={isCreating}>
-                    {isCreating ? "Creating..." : <><Plus size={18} style={{marginRight: '6px'}}/> Create New Project</>}
+                <button className="btn btn-primary" onClick={handleCreateProject}>
+                    <Plus size={18} style={{marginRight: '6px'}}/> Create New Project
                 </button>
                 <button className="btn btn-outline" onClick={() => navigate('/projects')}>
                     View All Projects

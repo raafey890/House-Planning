@@ -1,134 +1,359 @@
-import React, { useState, useMemo } from 'react';
-import { ZoomIn, ZoomOut, Maximize, MousePointer2 } from 'lucide-react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { ZoomIn, ZoomOut, Maximize2, RotateCcw, MousePointer2, Download, Image as ImageIcon, Move } from 'lucide-react';
+import FloorPlanSVG from '../../../components/floorplan/FloorPlanSVG';
+import '../../../styles/pages/floorplan-viewer.css';
 
 /**
- * Renders structured JSON floor plan data into an interactive SVG.
- * Handles automatic coordinate scaling to fit the container.
+ * FloorPlanViewer — Phase 6G Enhanced
+ *
+ * Wraps FloorPlanSVG with:
+ * - Toolbar (floor selector + zoom/pan controls + SVG/PNG exports)
+ * - Interactive mouse-drag panning & wheel zoom
+ * - SVG viewport with transform
+ * - Info bar showing plot/metrics + hovered room
+ * - Collapsible raw JSON section for dev inspection
+ * - Loading overlay
+ * - Empty state when no layout exists yet
  */
-const FloorPlanViewer = ({ layoutData, plotWidth, plotLength }) => {
-    const [zoom, setZoom] = useState(1);
-    const [hoveredRoom, setHoveredRoom] = useState(null);
+const FloorPlanViewer = ({ layoutData, plotWidth, plotLength, project, loading, loadingMessage }) => {
+  const [zoom, setZoom] = useState(1.0);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [selectedFloor, setSelectedFloor] = useState(0);
+  const [hoveredRoom, setHoveredRoom] = useState(null);
+  const viewportRef = useRef(null);
 
-    // If no data, show architectural empty state
-    if (!layoutData || !layoutData.floors || layoutData.floors.length === 0) {
-        return (
-            <div style={{ width: '100%', height: '100%', backgroundColor: 'var(--color-surface-alt)', borderRadius: 'var(--radius-lg)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--color-border)', flexDirection: 'column' }}>
-                <MousePointer2 size={48} color="var(--color-border)" style={{ marginBottom: '16px' }} />
-                <h3 className="text-h4" style={{ color: 'var(--color-text-muted)' }}>Viewer Canvas Ready</h3>
-                <p style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem', maxWidth: '300px', textAlign: 'center' }}>
-                    Generated structured layout data will be rendered here as interactive scalable geometry.
-                </p>
-            </div>
-        );
+  const zoomIn    = () => setZoom(z => Math.min(+(z + 0.25).toFixed(2), 4.0));
+  const zoomOut   = () => setZoom(z => Math.max(+(z - 0.25).toFixed(2), 0.25));
+  const fitPlot   = () => { setZoom(1.0); setPan({ x: 0, y: 0 }); };
+  const fitBuilding = () => { setZoom(1.5); setPan({ x: 0, y: 0 }); };
+  const resetZoom = () => { setZoom(1.25); setPan({ x: 0, y: 0 }); setSelectedFloor(0); };
+
+  // Mouse pan handlers
+  const handlePointerDown = (e) => {
+    // Only drag with primary mouse button
+    if (e.button !== 0) return;
+    setIsDragging(true);
+    setDragStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
+    e.currentTarget.setPointerCapture?.(e.pointerId);
+  };
+
+  const handlePointerMove = (e) => {
+    if (!isDragging) return;
+    setPan({
+      x: e.clientX - dragStart.x,
+      y: e.clientY - dragStart.y
+    });
+  };
+
+  const handlePointerUp = (e) => {
+    if (isDragging) {
+      setIsDragging(false);
+      e.currentTarget.releasePointerCapture?.(e.pointerId);
     }
+  };
 
-    // --- Geometry & Scaling Logic ---
-    // The AI outputs coordinates where 1 unit = 1 ft usually, relative to 0,0.
-    // We want to fit this into the SVG viewBox.
-    // Let's assume the outer bounding box is plotWidth x plotLength.
-    const w = plotWidth || layoutData.metadata?.bounding_box?.w || 40;
-    const l = plotLength || layoutData.metadata?.bounding_box?.l || 60;
-    
-    // Add some padding to the viewBox
-    const padding = 2;
-    const viewBox = `${-padding} ${-padding} ${w + padding * 2} ${l + padding * 2}`;
+  // Wheel zoom
+  const handleWheel = (e) => {
+    e.preventDefault();
+    const delta = e.deltaY < 0 ? 0.15 : -0.15;
+    setZoom(z => Math.min(Math.max(+(z + delta).toFixed(2), 0.25), 4.0));
+  };
 
-    const floor = layoutData.floors[0]; // Just showing first floor for now
+  // Export as SVG
+  const handleExportSVG = () => {
+    const svgEl = viewportRef.current?.querySelector('svg');
+    if (!svgEl) return;
+    const serializer = new XMLSerializer();
+    let source = serializer.serializeToString(svgEl);
+    if (!source.match(/^<svg[^>]+xmlns="http:\/\/www\.w3\.org\/2000\/svg"/)) {
+      source = source.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"');
+    }
+    const blob = new Blob([source], { type: 'image/svg+xml;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    const projName = (project?.name || 'house_plan').toLowerCase().replace(/\s+/g, '_');
+    a.download = `${projName}_floorplan_level_${selectedFloor}.svg`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
 
-    const handleZoomIn = () => setZoom(z => Math.min(z + 0.2, 3));
-    const handleZoomOut = () => setZoom(z => Math.max(z - 0.2, 0.5));
-    const handleReset = () => setZoom(1);
+  // Export as PNG
+  const handleExportPNG = () => {
+    const svgEl = viewportRef.current?.querySelector('svg');
+    if (!svgEl) return;
+    const serializer = new XMLSerializer();
+    let source = serializer.serializeToString(svgEl);
+    if (!source.match(/^<svg[^>]+xmlns="http:\/\/www\.w3\.org\/2000\/svg"/)) {
+      source = source.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"');
+    }
+    const svgBlob = new Blob([source], { type: 'image/svg+xml;charset=utf-8' });
+    const blobURL = URL.createObjectURL(svgBlob);
+    const img = new Image();
+    img.onload = () => {
+      const scale = 2.5;
+      const width = (svgEl.viewBox?.baseVal?.width || svgEl.clientWidth || 1000) * scale;
+      const height = (svgEl.viewBox?.baseVal?.height || svgEl.clientHeight || 800) * scale;
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, width, height);
+      ctx.drawImage(img, 0, 0, width, height);
+      const pngURL = canvas.toDataURL('image/png');
+      const a = document.createElement('a');
+      a.href = pngURL;
+      const projName = (project?.name || 'house_plan').toLowerCase().replace(/\s+/g, '_');
+      a.download = `${projName}_floorplan_level_${selectedFloor}.png`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(blobURL);
+    };
+    img.src = blobURL;
+  };
+
+  useEffect(() => {
+    if (layoutData && !loading) {
+      setZoom(1.25);
+      setPan({ x: 0, y: 0 });
+    }
+  }, [layoutData, loading]);
+
+  // Derive hovered room label for info bar
+  const hoveredRoomLabel = useMemo(() => {
+    if (!hoveredRoom || !layoutData) return null;
+    if (selectedFloor === 'site') {
+      const siteArea = layoutData.plot?.site_areas?.find(a => a.id === hoveredRoom);
+      return siteArea ? siteArea.label : null;
+    }
+    const floor = layoutData.floors?.find(f => f.level === selectedFloor)
+      || layoutData.floors?.[selectedFloor]
+      || layoutData.floors?.[0];
+    const room = floor?.rooms?.find(r => r.id === hoveredRoom);
+    if (room) return room.label;
+    const outdoor = floor?.outdoor_areas?.find(a => a.id === hoveredRoom);
+    if (outdoor) return outdoor.label;
+    const siteArea = layoutData.plot?.site_areas?.find(a => a.id === hoveredRoom);
+    return siteArea ? siteArea.label : null;
+  }, [hoveredRoom, layoutData, selectedFloor]);
+
+  // Metrics (may be empty object)
+  const metrics = layoutData?.metrics || {};
+  const plot    = layoutData?.plot;
+
+  // ── Empty state ─────────────────────────────────────────────────────────────
+  if (!loading && (!layoutData || !layoutData.floors || layoutData.floors.length === 0)) {
+    const pw = plotWidth || project?.plot_width;
+    const pl = plotLength || project?.plot_length;
+    const floorText = project?.floors > 1 ? `G + ${project.floors - 1}` : 'Ground Floor';
 
     return (
-        <div style={{ width: '100%', height: '100%', position: 'relative', backgroundColor: '#f0f3f5', borderRadius: 'var(--radius-lg)', overflow: 'hidden', border: '1px solid var(--color-border)' }}>
-            
-            {/* Toolbar */}
-            <div style={{ position: 'absolute', top: '16px', right: '16px', display: 'flex', gap: '8px', zIndex: 10, background: 'var(--color-surface-card)', padding: '4px', borderRadius: '8px', boxShadow: 'var(--shadow-sm)' }}>
-                <button className="btn btn-ghost btn-sm" style={{ padding: '6px' }} onClick={handleZoomIn} title="Zoom In"><ZoomIn size={18} /></button>
-                <button className="btn btn-ghost btn-sm" style={{ padding: '6px' }} onClick={handleZoomOut} title="Zoom Out"><ZoomOut size={18} /></button>
-                <button className="btn btn-ghost btn-sm" style={{ padding: '6px' }} onClick={handleReset} title="Fit to Screen"><Maximize size={18} /></button>
-            </div>
-
-            {/* Scale Indicator */}
-            <div style={{ position: 'absolute', bottom: '16px', left: '16px', zIndex: 10, background: 'rgba(255,255,255,0.8)', padding: '4px 12px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600, color: 'var(--color-text-main)' }}>
-                Plot: {w}' × {l}'
-            </div>
-
-            {/* SVG Renderer */}
-            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'auto' }}>
-                <div style={{ transform: `scale(${zoom})`, transformOrigin: 'center center', transition: 'transform 0.2s ease-out', width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <svg 
-                        viewBox={viewBox} 
-                        style={{ maxWidth: '100%', maxHeight: '100%', width: '100%', dropShadow: '0 10px 20px rgba(0,0,0,0.1)' }}
-                        vectorEffect="non-scaling-stroke"
-                    >
-                        {/* Plot Boundary */}
-                        <rect x="0" y="0" width={w} height={l} fill="#e5ecef" stroke="#c2d1d9" strokeWidth="0.2" strokeDasharray="0.5 0.5" />
-                        
-                        {/* Rooms */}
-                        {floor.rooms?.map((room, i) => {
-                            const isHovered = hoveredRoom === room.id;
-                            const rx = room.position?.x || 0;
-                            const ry = room.position?.y || 0;
-                            const rw = room.dimensions?.width || 10;
-                            const rl = room.dimensions?.length || 10;
-                            
-                            return (
-                                <g 
-                                    key={room.id || i}
-                                    onMouseEnter={() => setHoveredRoom(room.id)}
-                                    onMouseLeave={() => setHoveredRoom(null)}
-                                    style={{ cursor: 'pointer', transition: 'all 0.2s' }}
-                                >
-                                    {/* Room Area */}
-                                    <rect 
-                                        x={rx} y={ry} width={rw} height={rl} 
-                                        fill={isHovered ? "var(--color-primary-light)" : "white"} 
-                                        stroke="var(--color-text-main)" 
-                                        strokeWidth="0.4"
-                                        style={{ transition: 'fill 0.2s' }}
-                                    />
-                                    
-                                    {/* Room Label */}
-                                    <text x={rx + rw/2} y={ry + rl/2} textAnchor="middle" dominantBaseline="middle" fontSize="1.2" fontWeight="600" fill="var(--color-text-main)" style={{ pointerEvents: 'none' }}>
-                                        {room.name?.toUpperCase()}
-                                    </text>
-                                    
-                                    {/* Room Dimensions */}
-                                    <text x={rx + rw/2} y={ry + rl/2 + 1.5} textAnchor="middle" dominantBaseline="middle" fontSize="0.8" fill="var(--color-text-muted)" style={{ pointerEvents: 'none' }}>
-                                        {rw}' × {rl}'
-                                    </text>
-                                    
-                                    {/* Render Doors placeholder if any */}
-                                    {room.doors?.map((door, di) => {
-                                        // Simplified door render based on wall
-                                        let dx = rx, dy = ry, dw = 0, dl = 0;
-                                        if (door.wall === 'south') { dx = rx + door.offset; dy = ry + rl - 0.2; dw = door.width; dl = 0.4; }
-                                        if (door.wall === 'north') { dx = rx + door.offset; dy = ry - 0.2; dw = door.width; dl = 0.4; }
-                                        if (door.wall === 'east') { dx = rx + rw - 0.2; dy = ry + door.offset; dw = 0.4; dl = door.width; }
-                                        if (door.wall === 'west') { dx = rx - 0.2; dy = ry + door.offset; dw = 0.4; dl = door.width; }
-                                        
-                                        return <rect key={`d${di}`} x={dx} y={dy} width={dw} height={dl} fill="white" stroke="var(--color-text-main)" strokeWidth="0.1" />
-                                    })}
-
-                                    {/* Render Windows placeholder if any */}
-                                    {room.windows?.map((win, wi) => {
-                                        let wx = rx, wy = ry, ww = 0, wl = 0;
-                                        if (win.wall === 'south') { wx = rx + win.offset; wy = ry + rl - 0.15; ww = win.width; wl = 0.3; }
-                                        if (win.wall === 'north') { wx = rx + win.offset; wy = ry - 0.15; ww = win.width; wl = 0.3; }
-                                        if (win.wall === 'east') { wx = rx + rw - 0.15; wy = ry + win.offset; ww = 0.3; wl = win.width; }
-                                        if (win.wall === 'west') { wx = rx - 0.15; wy = ry + win.offset; ww = 0.3; wl = win.width; }
-                                        
-                                        return <rect key={`w${wi}`} x={wx} y={wy} width={ww} height={wl} fill="#cce0ff" stroke="var(--color-primary)" strokeWidth="0.1" />
-                                    })}
-                                </g>
-                            )
-                        })}
-                    </svg>
-                </div>
-            </div>
-        </div>
+      <div className="fp-empty-state">
+        <MousePointer2 size={44} color="var(--color-text-muted)" style={{ opacity: 0.4 }} />
+        <h3>READY TO GENERATE</h3>
+        <p>
+          Create your first AI-assisted floor plan from your saved project requirements.
+          Click <strong>Generate AI Floor Plan</strong> to begin.
+        </p>
+        {pw && pl && (
+          <div style={{
+            display: 'flex', gap: '8px', alignItems: 'center',
+            fontSize: '0.82rem', fontWeight: 500, color: 'var(--color-text-main)',
+            background: 'var(--color-surface-card)', padding: '6px 16px',
+            borderRadius: 'var(--radius-full)', border: '1px solid var(--color-border-light)',
+            marginTop: '4px'
+          }}>
+            <span>{pw} × {pl} ft</span>
+            <span style={{ opacity: 0.3 }}>•</span>
+            <span>{project?.facing || 'Unknown'} Facing</span>
+            <span style={{ opacity: 0.3 }}>•</span>
+            <span>{floorText}</span>
+          </div>
+        )}
+      </div>
     );
+  }
+
+  const floors = layoutData?.floors || [];
+  const displayW = plot?.width  || plotWidth  || 30;
+  const displayL = plot?.length || plotLength || 40;
+
+  return (
+    <div className="fp-viewer-container">
+
+      {/* ── Loading overlay ──────────────────────────────────────────────────── */}
+      {loading && (
+        <div className="fp-loading-overlay">
+          <div className="fp-loading-spinner" />
+          <div className="fp-loading-text">
+            {loadingMessage || 'Generating your AI floor plan...'}
+          </div>
+        </div>
+      )}
+
+      {/* ── Toolbar ─────────────────────────────────────────────────────────── */}
+      <div className="fp-toolbar">
+        {/* Floor tabs */}
+        <div className="fp-floor-tabs">
+          {floors.map((floor, idx) => (
+            <button
+              key={floor.level ?? idx}
+              className={`fp-floor-tab ${selectedFloor === (floor.level ?? idx) ? 'active' : ''}`}
+              onClick={() => setSelectedFloor(floor.level ?? idx)}
+            >
+              {floor.name || `Floor ${idx}`}
+            </button>
+          ))}
+          {floors.length > 1 && (
+            <button
+              key="both-tab"
+              className={`fp-floor-tab ${selectedFloor === 'both' ? 'active' : ''}`}
+              onClick={() => setSelectedFloor('both')}
+            >
+              Side-by-Side Blueprint
+            </button>
+          )}
+          <button
+            key="site-tab"
+            className={`fp-floor-tab ${selectedFloor === 'site' ? 'active' : ''}`}
+            onClick={() => setSelectedFloor('site')}
+          >
+            Site Plan
+          </button>
+        </div>
+
+        {/* Zoom & Pan controls */}
+        <div className="fp-zoom-controls">
+          <button className="fp-zoom-btn" onClick={zoomIn} title="Zoom In (+)"><ZoomIn size={13} /></button>
+          <span className="fp-zoom-label">{Math.round(zoom * 100)}%</span>
+          <button className="fp-zoom-btn" onClick={zoomOut} title="Zoom Out (-)"><ZoomOut size={13} /></button>
+          <button className="fp-zoom-btn" onClick={fitPlot} title="Fit Plot"><Maximize2 size={13} /></button>
+          <button className="fp-zoom-btn" onClick={fitBuilding} title="Fit Building"><Maximize2 size={13} /></button>
+          <button className="fp-zoom-btn" onClick={resetZoom} title="Reset View"><RotateCcw size={13} /></button>
+        </div>
+
+        {/* CAD Export Actions */}
+        <div className="fp-export-controls">
+          <button
+            className="fp-export-btn"
+            onClick={handleExportSVG}
+            title="Download Vector CAD SVG Blueprint"
+          >
+            <Download size={13} />
+            <span>SVG</span>
+          </button>
+          <button
+            className="fp-export-btn"
+            onClick={handleExportPNG}
+            title="Download High-Resolution PNG Blueprint"
+          >
+            <ImageIcon size={13} />
+            <span>PNG</span>
+          </button>
+        </div>
+      </div>
+
+      {/* ── Interactive Pan & Zoom SVG Viewport ──────────────────────────────── */}
+      <div
+        ref={viewportRef}
+        className={`fp-svg-viewport ${isDragging ? 'is-dragging' : ''}`}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerLeave={handlePointerUp}
+        onWheel={handleWheel}
+        style={{ cursor: isDragging ? 'grabbing' : 'grab', userSelect: 'none', touchAction: 'none' }}
+      >
+        <div
+          style={{
+            transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+            transformOrigin: 'center center',
+            transition: isDragging ? 'none' : 'transform 0.12s ease-out',
+            width: '100%',
+            maxWidth: selectedFloor === 'both' ? '1400px' : '850px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            pointerEvents: isDragging ? 'none' : 'auto'
+          }}
+        >
+          {layoutData && (
+            <FloorPlanSVG
+              layoutData={layoutData}
+              selectedFloor={selectedFloor}
+              hoveredRoomId={hoveredRoom}
+              onRoomHover={setHoveredRoom}
+            />
+          )}
+        </div>
+      </div>
+
+      {/* ── Info bar ────────────────────────────────────────────────────────── */}
+      <div className="fp-info-bar">
+        <span className="fp-info-badge">
+          Plot: <strong>{displayW}′ × {displayL}′</strong>
+        </span>
+
+        {metrics.totals?.plot_coverage_pct !== undefined && (
+          <>
+            <span className="fp-info-sep" />
+            <span className="fp-info-badge">
+              Plot Cov: <strong>{metrics.totals.plot_coverage_pct}%</strong>
+            </span>
+          </>
+        )}
+
+        {metrics.totals?.buildable_coverage_pct !== undefined && (
+          <>
+            <span className="fp-info-sep" />
+            <span className="fp-info-badge">
+              Build Cov: <strong>{metrics.totals.buildable_coverage_pct}%</strong>
+            </span>
+          </>
+        )}
+
+        {metrics.totals?.internal_building_utilization_pct !== undefined && (
+          <>
+            <span className="fp-info-sep" />
+            <span className="fp-info-badge">
+              Internal Util: <strong>{metrics.totals.internal_building_utilization_pct}%</strong>
+            </span>
+          </>
+        )}
+
+        {hoveredRoomLabel && (
+          <>
+            <span className="fp-info-sep" />
+            <span className="fp-hovered-room">{hoveredRoomLabel}</span>
+          </>
+        )}
+
+        <div style={{ flex: 1 }} />
+        <span style={{ fontSize: '0.7rem', opacity: 0.4 }}>1 unit = 1 ft</span>
+      </div>
+
+      {/* ── Collapsible raw data ─────────────────────────────────────────────── */}
+      {layoutData && (
+        <details className="fp-raw-data">
+          <summary>View Layout Data (Developer)</summary>
+          <div style={{ padding: '8px 12px', background: 'rgba(0,0,0,0.25)', fontSize: '0.75rem', borderBottom: '1px solid var(--color-border)', lineHeight: '1.6' }}>
+            <div><strong>Generation ID:</strong> {layoutData.metadata?.generation_id || project?.id || 'live'}</div>
+            <div><strong>Created At:</strong> {layoutData.metadata?.created_at || new Date().toISOString()}</div>
+            <div><strong>Engine:</strong> {layoutData.metadata?.generation_engine || 'deterministic'}</div>
+            <div><strong>Variant / Seed:</strong> {layoutData.metadata?.variant || 'balanced'} (Seed: {layoutData.metadata?.seed ?? '42'})</div>
+            <div><strong>Quality Score:</strong> {layoutData.metadata?.architectural_quality?.total_score ?? metrics?.architectural_quality?.total_score ?? '--'} / 100</div>
+          </div>
+          <pre>{JSON.stringify(layoutData, null, 2)}</pre>
+        </details>
+      )}
+    </div>
+  );
 };
 
 export default FloorPlanViewer;

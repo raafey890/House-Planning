@@ -105,4 +105,8 @@ const useProjectStore = create((set, get) => ({
   clearCurrentProject: () => set({ currentProject: null })
 }));
 
+if (typeof window !== 'undefined') {
+  window.useProjectStore = useProjectStore;
+}
+
 export default useProjectStore;

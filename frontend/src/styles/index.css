@@ -6,7 +6,7 @@
 @import "./themes/darkTheme.css";
 
 @import "./layouts/navbar.css";
-@import "./layouts/sidebar.css";
+
 @import "./layouts/footer.css";
 
 @import "./components/buttons.css";
@@ -16,3 +16,5 @@
 
 @import "./animations/transitions.css";
 @import "./animations/loaders.css";
+
+@import "./pages/floorplan-viewer.css";

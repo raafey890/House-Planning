@@ -1,0 +1,67 @@
+<svg viewBox="-4.0 -5.0 59.5 89.0" width="800" height="1100" xmlns="http://www.w3.org/2000/svg">
+<rect x="0" y="0" width="50.0" height="80.0" fill="#e8e4dc" stroke="#5a6a5a" stroke-width="0.3" stroke-dasharray="1.2 0.6"/>
+<rect x="4.0" y="53.0" width="7.0" height="14.0" fill="#edf5ed" stroke="#7a9a7a" stroke-width="0.2"/>
+<text x="7.5" y="60.0" font-size="1.2" font-family="sans-serif" text-anchor="middle" fill="#3a6a3a">Balcony</text>
+<rect x="17.0" y="67.0" width="24.0" height="9.0" fill="#edf5ed" stroke="#7a9a7a" stroke-width="0.2"/>
+<text x="29.0" y="71.5" font-size="1.2" font-family="sans-serif" text-anchor="middle" fill="#3a6a3a">Open Terrace</text>
+<rect x="11.0" y="17.0" width="36.0" height="59.0" fill="none" stroke="#2c3e50" stroke-width="0.4" stroke-dasharray="0.8 0.4"/>
+<rect x="11.0" y="52.0" width="9.0" height="15.0" fill="#f0f0f0" stroke="#333" stroke-width="0.25"/>
+<text x="15.5" y="59.0" font-size="1.0" font-family="sans-serif" font-weight="bold" text-anchor="middle" fill="#1a2620">STAIRCASE</text>
+<text x="15.5" y="60.3" font-size="0.8" font-family="sans-serif" text-anchor="middle" fill="#555">9′ × 15′</text>
+<rect x="5.0" y="20.0" width="17.0" height="19.0" fill="#f4f4f4" stroke="#333" stroke-width="0.25"/>
+<text x="13.5" y="29.0" font-size="1.0" font-family="sans-serif" font-weight="bold" text-anchor="middle" fill="#1a2620">MASTER BEDROOM</text>
+<text x="13.5" y="30.3" font-size="0.8" font-family="sans-serif" text-anchor="middle" fill="#555">17′ × 19′</text>
+<rect x="23.0" y="36.0" width="14.0" height="16.0" fill="#f8f8f8" stroke="#333" stroke-width="0.25"/>
+<text x="30.0" y="43.5" font-size="1.0" font-family="sans-serif" font-weight="bold" text-anchor="middle" fill="#1a2620">BEDROOM</text>
+<text x="30.0" y="44.8" font-size="0.8" font-family="sans-serif" text-anchor="middle" fill="#555">14′ × 16′</text>
+<rect x="11.0" y="39.0" width="6.0" height="8.0" fill="#f0f0f0" stroke="#333" stroke-width="0.25"/>
+<text x="14.0" y="42.5" font-size="1.0" font-family="sans-serif" font-weight="bold" text-anchor="middle" fill="#1a2620">BATHROOM</text>
+<text x="14.0" y="43.8" font-size="0.8" font-family="sans-serif" text-anchor="middle" fill="#555">6′ × 8′</text>
+<rect x="22.0" y="14.0" width="6.0" height="8.0" fill="#f0f0f0" stroke="#333" stroke-width="0.25"/>
+<text x="25.0" y="17.5" font-size="1.0" font-family="sans-serif" font-weight="bold" text-anchor="middle" fill="#1a2620">BATHROOM</text>
+<text x="25.0" y="18.8" font-size="0.8" font-family="sans-serif" text-anchor="middle" fill="#555">6′ × 8′</text>
+<rect x="21.0" y="52.0" width="12.0" height="14.0" fill="#f5f5f5" stroke="#333" stroke-width="0.25"/>
+<text x="27.0" y="58.5" font-size="1.0" font-family="sans-serif" font-weight="bold" text-anchor="middle" fill="#1a2620">STUDY ROOM</text>
+<text x="27.0" y="59.8" font-size="0.8" font-family="sans-serif" text-anchor="middle" fill="#555">12′ × 14′</text>
+<rect x="17.0" y="39.0" width="6.0" height="13.0" fill="#ffffff" stroke="#333" stroke-width="0.25"/>
+<text x="20.0" y="45.0" font-size="1.0" font-family="sans-serif" font-weight="bold" text-anchor="middle" fill="#1a2620">CORRIDOR</text>
+<text x="20.0" y="46.3" font-size="0.8" font-family="sans-serif" text-anchor="middle" fill="#555">6′ × 13′</text>
+<line x1="11.0" y1="52.0" x2="20.0" y2="52.0" stroke="#222" stroke-width="0.4"/>
+<line x1="11.0" y1="67.0" x2="20.0" y2="67.0" stroke="#222" stroke-width="0.4"/>
+<line x1="20.0" y1="52.0" x2="20.0" y2="67.0" stroke="#222" stroke-width="0.4"/>
+<line x1="11.0" y1="52.0" x2="11.0" y2="67.0" stroke="#222" stroke-width="0.4"/>
+<line x1="5.0" y1="20.0" x2="22.0" y2="20.0" stroke="#222" stroke-width="0.4"/>
+<line x1="5.0" y1="39.0" x2="22.0" y2="39.0" stroke="#222" stroke-width="0.4"/>
+<line x1="22.0" y1="20.0" x2="22.0" y2="39.0" stroke="#222" stroke-width="0.4"/>
+<line x1="5.0" y1="20.0" x2="5.0" y2="39.0" stroke="#222" stroke-width="0.4"/>
+<line x1="23.0" y1="36.0" x2="37.0" y2="36.0" stroke="#222" stroke-width="0.4"/>
+<line x1="23.0" y1="52.0" x2="37.0" y2="52.0" stroke="#222" stroke-width="0.4"/>
+<line x1="37.0" y1="36.0" x2="37.0" y2="52.0" stroke="#222" stroke-width="0.4"/>
+<line x1="23.0" y1="36.0" x2="23.0" y2="52.0" stroke="#222" stroke-width="0.4"/>
+<line x1="11.0" y1="39.0" x2="17.0" y2="39.0" stroke="#222" stroke-width="0.4"/>
+<line x1="11.0" y1="47.0" x2="17.0" y2="47.0" stroke="#222" stroke-width="0.4"/>
+<line x1="17.0" y1="39.0" x2="17.0" y2="47.0" stroke="#222" stroke-width="0.4"/>
+<line x1="11.0" y1="39.0" x2="11.0" y2="47.0" stroke="#222" stroke-width="0.4"/>
+<line x1="22.0" y1="14.0" x2="28.0" y2="14.0" stroke="#222" stroke-width="0.4"/>
+<line x1="22.0" y1="22.0" x2="28.0" y2="22.0" stroke="#222" stroke-width="0.4"/>
+<line x1="28.0" y1="14.0" x2="28.0" y2="22.0" stroke="#222" stroke-width="0.4"/>
+<line x1="22.0" y1="14.0" x2="22.0" y2="22.0" stroke="#222" stroke-width="0.4"/>
+<line x1="4.0" y1="53.0" x2="11.0" y2="53.0" stroke="#222" stroke-width="0.4"/>
+<line x1="4.0" y1="67.0" x2="11.0" y2="67.0" stroke="#222" stroke-width="0.4"/>
+<line x1="11.0" y1="53.0" x2="11.0" y2="67.0" stroke="#222" stroke-width="0.4"/>
+<line x1="4.0" y1="53.0" x2="4.0" y2="67.0" stroke="#222" stroke-width="0.4"/>
+<line x1="21.0" y1="52.0" x2="33.0" y2="52.0" stroke="#222" stroke-width="0.4"/>
+<line x1="21.0" y1="66.0" x2="33.0" y2="66.0" stroke="#222" stroke-width="0.4"/>
+<line x1="33.0" y1="52.0" x2="33.0" y2="66.0" stroke="#222" stroke-width="0.4"/>
+<line x1="21.0" y1="52.0" x2="21.0" y2="66.0" stroke="#222" stroke-width="0.4"/>
+<line x1="17.0" y1="39.0" x2="23.0" y2="39.0" stroke="#222" stroke-width="0.4"/>
+<line x1="17.0" y1="52.0" x2="23.0" y2="52.0" stroke="#222" stroke-width="0.4"/>
+<line x1="23.0" y1="39.0" x2="23.0" y2="52.0" stroke="#222" stroke-width="0.4"/>
+<line x1="17.0" y1="39.0" x2="17.0" y2="52.0" stroke="#222" stroke-width="0.4"/>
+<line x1="17.0" y1="67.0" x2="41.0" y2="67.0" stroke="#222" stroke-width="0.4"/>
+<line x1="17.0" y1="76.0" x2="41.0" y2="76.0" stroke="#222" stroke-width="0.4"/>
+<line x1="41.0" y1="67.0" x2="41.0" y2="76.0" stroke="#222" stroke-width="0.4"/>
+<line x1="17.0" y1="67.0" x2="17.0" y2="76.0" stroke="#222" stroke-width="0.4"/>
+<rect x="10.5" y="79.5" width="4.0" height="1.0" fill="#4a7a5a"/>
+<rect x="36.5" y="79.5" width="10.0" height="1.0" fill="#4a7a5a"/>
+</svg>

@@ -1,13 +1,14 @@
 import { useState } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { useAuthStore } from "../../store";
-import { Box } from "lucide-react";
+import { Box, Eye, EyeOff } from "lucide-react";
 import "../../styles/pages/auth.css";
 
 function SignupPage() {
     const [fullName, setFullName] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [showPassword, setShowPassword] = useState(false);
     const [successMsg, setSuccessMsg] = useState("");
     
     const signUp = useAuthStore((state) => state.signUp);
@@ -25,8 +26,8 @@ function SignupPage() {
         const { error } = await signUp(email, password, fullName);
         if (!error) {
             const returnTo = location.state?.returnTo || "/dashboard";
-            setSuccessMsg("Account created successfully! Redirecting...");
-            setTimeout(() => navigate(returnTo, { replace: true }), 1500);
+            setSuccessMsg("Account created! Please check your email to verify your account before logging in.");
+            setTimeout(() => navigate("/login", { state: { returnTo } }), 3000);
         }
     }
 
@@ -75,15 +76,25 @@ function SignupPage() {
                         </div>
                         <div className="form-group">
                             <label className="form-label">Password</label>
-                            <input
-                                className="form-control"
-                                type="password"
-                                placeholder="•••••••• (min 6 chars)"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                required
-                                minLength={6}
-                            />
+                            <div className="password-input-wrapper">
+                                <input
+                                    className="form-control"
+                                    type={showPassword ? "text" : "password"}
+                                    placeholder="•••••••• (min 6 chars)"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    required
+                                    minLength={6}
+                                />
+                                <button
+                                    type="button"
+                                    className="password-toggle-btn"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    aria-label={showPassword ? "Hide password" : "Show password"}
+                                >
+                                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                </button>
+                            </div>
                         </div>
                         
                         <button type="submit" className="btn btn-primary btn-lg" style={{ width: '100%', marginTop: 'var(--space-2)' }} disabled={loading}>

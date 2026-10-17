@@ -1,0 +1,460 @@
+/* ==========================================================================
+   Cost Estimate Stylesheet — Phase 6D
+   ========================================================================== */
+
+.cost-estimate-container {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6, 1.5rem);
+    width: 100%;
+}
+
+/* Header & Action Bar */
+.estimate-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--color-border, #2d3748);
+}
+
+.estimate-title-group h2 {
+    margin: 0 0 0.25rem 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--color-text, #f7fafc);
+}
+
+.estimate-meta-tags {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.meta-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.2rem 0.6rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.meta-badge.location {
+    background: rgba(59, 130, 246, 0.15);
+    color: #60a5fa;
+    border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.meta-badge.benchmark {
+    background: rgba(16, 185, 129, 0.15);
+    color: #34d399;
+    border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.estimate-actions {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+/* Summary Metrics Cards Grid */
+.estimate-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+}
+
+.estimate-metric-card {
+    background: var(--color-surface, #1e293b);
+    border: 1px solid var(--color-border, #334155);
+    border-radius: 0.75rem;
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.estimate-metric-card:hover {
+    border-color: var(--color-primary, #10b981);
+}
+
+.estimate-metric-card.hero {
+    grid-column: span 2;
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.12), rgba(30, 41, 59, 0.95));
+    border-color: rgba(16, 185, 129, 0.4);
+}
+
+@media (max-width: 768px) {
+    .estimate-metric-card.hero {
+        grid-column: span 1;
+    }
+}
+
+.metric-label {
+    font-size: 0.85rem;
+    color: var(--color-text-muted, #94a3b8);
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.metric-value-huge {
+    font-size: 2.25rem;
+    font-weight: 800;
+    color: #10b981;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+}
+
+.metric-value-large {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--color-text, #f1f5f9);
+    line-height: 1.2;
+}
+
+.metric-subtext {
+    font-size: 0.8rem;
+    color: var(--color-text-muted, #94a3b8);
+    margin-top: 0.35rem;
+}
+
+/* Area Schedule Mini-Table Card */
+.area-schedule-card {
+    background: var(--color-surface, #1e293b);
+    border: 1px solid var(--color-border, #334155);
+    border-radius: 0.75rem;
+    padding: 1.25rem;
+}
+
+.area-schedule-card h4 {
+    margin: 0 0 1rem 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--color-text, #f1f5f9);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.area-stats-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    font-size: 0.875rem;
+}
+
+.area-stats-row:last-child {
+    border-bottom: none;
+}
+
+.area-stats-row strong {
+    color: #f1f5f9;
+}
+
+/* Cost Breakdown Progress Bars */
+.breakdown-section {
+    background: var(--color-surface, #1e293b);
+    border: 1px solid var(--color-border, #334155);
+    border-radius: 0.75rem;
+    padding: 1.25rem;
+}
+
+.breakdown-bar-item {
+    margin-bottom: 1rem;
+}
+
+.breakdown-bar-item:last-child {
+    margin-bottom: 0;
+}
+
+.breakdown-label-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.875rem;
+    font-weight: 500;
+    margin-bottom: 0.35rem;
+}
+
+.breakdown-track {
+    height: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.breakdown-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.4s ease;
+}
+
+/* Detailed Line Items Table */
+.line-items-section {
+    background: var(--color-surface, #1e293b);
+    border: 1px solid var(--color-border, #334155);
+    border-radius: 0.75rem;
+    padding: 1.25rem;
+    overflow-x: auto;
+}
+
+.line-items-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+    text-align: left;
+}
+
+.line-items-table th {
+    background: rgba(15, 23, 42, 0.6);
+    padding: 0.75rem 1rem;
+    color: var(--color-text-muted, #94a3b8);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+    border-bottom: 2px solid var(--color-border, #334155);
+}
+
+.line-items-table td {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    vertical-align: middle;
+}
+
+.line-items-table tr:hover {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.item-desc-cell {
+    max-width: 320px;
+}
+
+.item-title {
+    font-weight: 600;
+    color: #f1f5f9;
+}
+
+.item-formula {
+    font-size: 0.75rem;
+    color: #94a3b8;
+    margin-top: 0.15rem;
+}
+
+.badge-tag {
+    display: inline-block;
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 600;
+}
+
+.badge-tag.geometry_derived {
+    background: rgba(16, 185, 129, 0.15);
+    color: #34d399;
+}
+
+.badge-tag.provisional_allowance {
+    background: rgba(245, 158, 11, 0.15);
+    color: #fbbf24;
+}
+
+.badge-tag.fixture_count {
+    background: rgba(99, 102, 241, 0.15);
+    color: #818cf8;
+}
+
+.badge-tag.specification_derived {
+    background: rgba(14, 165, 233, 0.15);
+    color: #38bdf8;
+}
+
+/* Edit Rates Modal / Drawer */
+.rates-modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    padding: 1rem;
+}
+
+.rates-modal {
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 1rem;
+    max-width: 800px;
+    width: 100%;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+}
+
+.rates-modal-header {
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid #334155;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.rates-modal-body {
+    padding: 1.5rem;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.rates-category-group h4 {
+    margin: 0 0 0.75rem 0;
+    font-size: 0.9rem;
+    color: #38bdf8;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding-bottom: 0.35rem;
+}
+
+.rates-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 0.75rem;
+}
+
+.rate-input-card {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 0.5rem;
+    padding: 0.75rem;
+}
+
+.rate-input-card label {
+    display: block;
+    font-size: 0.8rem;
+    color: #cbd5e1;
+    font-weight: 500;
+    margin-bottom: 0.35rem;
+}
+
+.rate-input-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.rate-input-row input {
+    width: 100%;
+    padding: 0.4rem 0.6rem;
+    background: #0f172a;
+    border: 1px solid #475569;
+    border-radius: 4px;
+    color: #f8fafc;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.rate-input-row input:focus {
+    outline: none;
+    border-color: #10b981;
+}
+
+.rates-modal-footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid #334155;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* Assumptions & Notes Box */
+.estimate-notes-card {
+    background: rgba(30, 41, 59, 0.7);
+    border: 1px solid #334155;
+    border-radius: 0.75rem;
+    padding: 1.25rem;
+    font-size: 0.85rem;
+    color: #94a3b8;
+}
+
+.estimate-notes-card h4 {
+    margin: 0 0 0.5rem 0;
+    color: #cbd5e1;
+    font-size: 0.95rem;
+}
+
+.estimate-notes-card ul {
+    margin: 0;
+    padding-left: 1.25rem;
+}
+
+.estimate-notes-card li {
+    margin-bottom: 0.35rem;
+}
+
+/* Print Stylesheet for High-Quality Engineering PDF Export */
+@media print {
+    body {
+        background: #ffffff !important;
+        color: #000000 !important;
+    }
+
+    .estimate-actions,
+    .btn,
+    nav,
+    header,
+    .navbar {
+        display: none !important;
+    }
+
+    .cost-estimate-container {
+        width: 100% !important;
+        padding: 0 !important;
+        gap: 1rem !important;
+    }
+
+    .estimate-metric-card,
+    .area-schedule-card,
+    .breakdown-section,
+    .line-items-section,
+    .estimate-notes-card {
+        background: #ffffff !important;
+        border: 1px solid #cccccc !important;
+        color: #000000 !important;
+        break-inside: avoid;
+    }
+
+    .metric-value-huge,
+    .metric-value-large,
+    strong,
+    .item-title {
+        color: #000000 !important;
+    }
+
+    .line-items-table th {
+        background: #f1f5f9 !important;
+        color: #000000 !important;
+    }
+
+    .line-items-table td {
+        border-bottom: 1px solid #e2e8f0 !important;
+        color: #000000 !important;
+    }
+}

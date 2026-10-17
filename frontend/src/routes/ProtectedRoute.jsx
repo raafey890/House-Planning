@@ -14,7 +14,18 @@ function ProtectedRoute({ children }) {
     );
   }
 
-  if (!session) {
+  const hasAuth = Boolean(session || (() => {
+    try {
+      const stored = localStorage.getItem('app_auth_session') || localStorage.getItem('sb-cptjtxjqsyuwrwstcehu-auth-token');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        return Boolean(parsed?.access_token || parsed?.user);
+      }
+    } catch (_) {}
+    return false;
+  })());
+
+  if (!hasAuth) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 

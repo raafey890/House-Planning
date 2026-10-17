@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1e252b" />
+      <stop offset="100%" stop-color="#10161a" />
+    </linearGradient>
+
+    <linearGradient id="floorGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#cbd5e0" />
+      <stop offset="100%" stop-color="#a0aec0" />
+    </linearGradient>
+
+    <linearGradient id="marbleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="40%" stop-color="#f2f2f2" />
+      <stop offset="70%" stop-color="#e8e8e8" />
+      <stop offset="100%" stop-color="#ffffff" />
+    </linearGradient>
+
+    <linearGradient id="glassGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#63b3ed" stop-opacity="0.25" />
+      <stop offset="50%" stop-color="#ffffff" stop-opacity="0.15" />
+      <stop offset="100%" stop-color="#63b3ed" stop-opacity="0.20" />
+    </linearGradient>
+
+    <linearGradient id="screenGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1a202c" />
+      <stop offset="100%" stop-color="#2d3748" />
+    </linearGradient>
+
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="8" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Room Shell & Wall Plane -->
+  <rect width="800" height="500" fill="url(#bgGrad)" />
+  <rect x="80" y="40" width="640" height="340" fill="#edf2f7" rx="6" opacity="0.95" />
+  <line x1="80" y1="40" x2="80" y2="380" stroke="#4a5568" stroke-width="2" />
+  <line x1="720" y1="40" x2="720" y2="380" stroke="#4a5568" stroke-width="2" />
+
+  <!-- Floor Plane with Perspective Lines -->
+  <polygon points="80,380 720,380 780,480 20,480" fill="url(#floorGrad)" />
+  <line x1="80" y1="380" x2="720" y2="380" stroke="#1a202c" stroke-width="2.5" />
+  <line x1="240" y1="380" x2="200" y2="480" stroke="#000000" stroke-width="0.8" opacity="0.3" />
+  <line x1="400" y1="380" x2="400" y2="480" stroke="#000000" stroke-width="0.8" opacity="0.3" />
+  <line x1="560" y1="380" x2="600" y2="480" stroke="#000000" stroke-width="0.8" opacity="0.3" />
+
+  <!-- Distinct Architectural Features -->
+  
+        <g id="bathroom-fixtures">
+            <circle cx="330" cy="180" r="65" fill="#f7fafc" stroke="#a0aec0" stroke-width="3" filter="url(#glow)" />
+            <rect x="230" y="280" width="200" height="55" rx="6" fill="#718096" stroke="#a0aec0" stroke-width="1.5" />
+            <ellipse cx="330" cy="280" rx="45" ry="12" fill="#ffffff" stroke="#cbd5e0" stroke-width="2" />
+            <path d="M 330 268 L 330 240 L 320 240" fill="none" stroke="#a0aec0" stroke-width="4" stroke-linecap="round" />
+            <rect x="470" y="110" width="180" height="280" fill="url(#glassGrad)" stroke="#4a5568" stroke-width="2.5" />
+            <line x1="470" y1="180" x2="650" y2="180" stroke="#718096" stroke-width="1" stroke-dasharray="4" />
+            <path d="M 560 110 L 560 135 L 560 145" fill="none" stroke="#a0aec0" stroke-width="5" />
+            <ellipse cx="560" cy="148" rx="25" ry="8" fill="#a0aec0" />
+            <ellipse cx="560" cy="155" rx="15" ry="4" fill="#4299e1" filter="url(#glow)" opacity="0.6" />
+        </g>
+        
+
+  <!-- Studio Header Overlay -->
+  <g id="badge" transform="translate(30, 30)">
+    <rect width="210" height="42" rx="8" fill="#0f172a" fill-opacity="0.85" stroke="#334155" stroke-width="1.5" />
+    <text x="14" y="18" fill="#94a3b8" font-family="system-ui, -apple-system, sans-serif" font-size="11" font-weight="600" letter-spacing="0.5">BATHROOM</text>
+    <text x="14" y="33" fill="#f8fafc" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="700">Modern Minimalist Bathroom</text>
+  </g>
+
+  <!-- Budget Tier Pill -->
+  <g id="tier-pill" transform="translate(680, 30)">
+    <rect width="90" height="28" rx="14" fill="#1e293b" stroke="#4299e1" stroke-width="1.5" />
+    <text x="45" y="18" fill="#4299e1" font-family="system-ui, -apple-system, sans-serif" font-size="11" font-weight="700" text-anchor="middle">Mid-Range</text>
+  </g>
+
+  <!-- Unique Stable ID -->
+  <g id="id-tag" transform="translate(710, 460)">
+    <text x="0" y="0" fill="#64748b" font-family="monospace" font-size="12" font-weight="600">int_bath_01</text>
+  </g>
+</svg>

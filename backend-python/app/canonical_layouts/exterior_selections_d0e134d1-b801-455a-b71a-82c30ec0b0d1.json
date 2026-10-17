@@ -1,0 +1,61 @@
+{
+  "project_id": "d0e134d1-b801-455a-b71a-82c30ec0b0d1",
+  "selection": {
+    "project_id": "d0e134d1-b801-455a-b71a-82c30ec0b0d1",
+    "design_id": "ext_mod_02",
+    "design_name": "Cantilevered Floating Slab Residence",
+    "category": "modern_contemporary",
+    "style": "Modern Contemporary",
+    "colors": {
+      "primary_wall": "#ECEFEF",
+      "secondary_wall": "#E5E7EB",
+      "accent_wall": "#8B5A2B",
+      "front_facade": "#ECEFEF",
+      "boundary_wall": "#E5E0D6",
+      "boundary_gate": "#30343B",
+      "door": "#8B5A2B",
+      "window_frame": "#20252B",
+      "window_glass_tint": "#7DD3FC",
+      "railing": "#1F2937",
+      "roof_parapet": "#8B5A2B",
+      "exterior_trims": "#20252B"
+    },
+    "materials": {
+      "finish_type": "smooth_stucco",
+      "cladding_type": "natural_teak_soffit",
+      "door_material": "pivot_teak",
+      "railing_material": "toughened_glass"
+    },
+    "architectural_elements": {},
+    "lighting": {
+      "style": "architectural_grazers",
+      "fixture_count": 6
+    },
+    "landscaping": {
+      "greenery_level": "moderate",
+      "boundary_wall_style": "matching_plaster",
+      "motorized_gate": true
+    },
+    "boundary_wall": {},
+    "compatibility_status": "compatible",
+    "compatibility_notes": [
+      "Optimal Floor Match: Fully designed for 2-floor configuration (G+1).",
+      "Excellent Frontage: Plot width 50ft comfortably fits the required 35ft facade."
+    ],
+    "additional_cost": 355004.32,
+    "cost_breakdown": {
+      "exterior_paint_upgrade": 75010.32,
+      "facade_cladding_and_louvers": 103194.0,
+      "doors_and_windows_upgrade": 55000.0,
+      "balcony_railing_upgrade": 32400.0,
+      "exterior_architectural_lighting": 26400.0,
+      "boundary_wall_and_gate": 35000.0,
+      "landscaping_and_pavers": 28000.0,
+      "total": 355004.32
+    },
+    "created_at": null,
+    "updated_at": "2026-10-17T11:50:29.557125"
+  },
+  "total_exterior_cost": 355004.32,
+  "updated_at": "2026-10-17T11:50:30.040299"
+}

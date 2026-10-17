@@ -14,12 +14,14 @@ import EstimateTab from './Tabs/EstimateTab';
 const ProjectWorkspace = () => {
     const { id } = useParams();
     const navigate = useNavigate();
-    const { projects, fetchProjects } = useProjectStore();
+    const { projects, fetchProjects, currentProject } = useProjectStore();
     const planner = usePlannerStore(); // Used just for checking readiness
     const { loadProjectSettings } = planner;
     const [activeTab, setActiveTab] = useState('overview');
 
-    const project = projects.find(p => p.id === id);
+    const project = projects.find(p => p.id === id) || (currentProject?.id === id ? currentProject : null) || (() => {
+        try { return JSON.parse(localStorage.getItem(`project_${id}`)); } catch (_) { return null; }
+    })();
 
     useEffect(() => {
         if (projects.length === 0) {
@@ -32,6 +34,14 @@ const ProjectWorkspace = () => {
             loadProjectSettings(project);
         }
     }, [project, loadProjectSettings]);
+
+    useEffect(() => {
+        if (activeTab === 'interior') {
+            navigate(`/projects/${id}/interior`);
+        } else if (activeTab === 'exterior') {
+            navigate(`/projects/${id}/exterior`);
+        }
+    }, [activeTab, id, navigate]);
 
     if (!project) return <div style={{ padding: '4rem', textAlign: 'center' }}>Loading workspace...</div>;
 
@@ -48,6 +58,10 @@ const ProjectWorkspace = () => {
     const handleTabClick = (tabId) => {
         if (tabId === 'planner') {
             navigate(`/projects/${id}/planner`);
+        } else if (tabId === 'interior') {
+            navigate(`/projects/${id}/interior`);
+        } else if (tabId === 'exterior') {
+            navigate(`/projects/${id}/exterior`);
         } else {
             setActiveTab(tabId);
         }
@@ -65,14 +79,14 @@ const ProjectWorkspace = () => {
                     <div>
                         <h1 className="text-h2" style={{ margin: 0 }}>{project.name}</h1>
                         <p className="text-muted" style={{ margin: 0, marginTop: '4px', display: 'flex', gap: '12px', alignItems: 'center', fontSize: '0.9rem' }}>
-                            {project.plot_length && project.plot_width ? (
+                            {project.plot_width && project.plot_length ? (
                                 <>
-                                    <span style={{ fontWeight: 600, color: 'var(--color-primary)' }}>{project.plot_length} × {project.plot_width} ft</span>
-                                    <span>•</span>
+                                    <span style={{ fontWeight: 600, color: 'var(--color-primary)' }}>{project.plot_width} × {project.plot_length} ft</span>
+                                    <span style={{ opacity: 0.4 }}>•</span>
                                     <span>{project.facing || 'Not set'} Facing</span>
-                                    <span>•</span>
+                                    <span style={{ opacity: 0.4 }}>•</span>
                                     <span>G + {(project.floors || 1) - 1}</span>
-                                    <span>•</span>
+                                    <span style={{ opacity: 0.4 }}>•</span>
                                     <span>{project.design_style || 'Style not set'}</span>
                                 </>
                             ) : (

@@ -1,0 +1,1503 @@
+/* ==========================================================================
+   Interior Design Studio Stylesheet — Phase 6E.1 Final Full-Page Redesign
+   Spacious full-width studio with vertical room navigation sidebar,
+   separated category filters, 2–3 column responsive cards gallery,
+   plan-aware blueprint previews, and interactive customizers.
+   ========================================================================== */
+
+/* ── Fullpage Container & Workspace ──────────────────────────────────────── */
+.interior-studio-fullpage-root {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    min-height: calc(100vh - 70px);
+    background: var(--color-surface, #0b1120);
+    color: var(--color-text, #f8fafc);
+}
+
+.interior-studio-root {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+    background: var(--color-surface, #0f172a);
+    color: var(--color-text, #f8fafc);
+}
+
+/* ── 1. Clean Full-Width Studio Header ───────────────────────────────────── */
+.interior-studio-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.85rem 1.75rem;
+    background: var(--color-surface-card, #1e293b);
+    border-bottom: 1px solid var(--color-border, #334155);
+    flex-shrink: 0;
+    gap: 1.25rem;
+    flex-wrap: wrap;
+    position: sticky;
+    top: 0;
+    z-index: 20;
+}
+
+.studio-header-left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.btn-back-to-project {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.45rem 0.85rem;
+    background: rgba(30, 41, 59, 0.9);
+    border: 1px solid #334155;
+    color: #cbd5e1;
+    border-radius: 6px;
+    font-size: 0.82rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    text-decoration: none;
+}
+
+.btn-back-to-project:hover {
+    background: #334155;
+    color: #38bdf8;
+    border-color: #475569;
+}
+
+.studio-brand-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.studio-page-title, .studio-brand-group h2 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #f8fafc;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    letter-spacing: -0.01em;
+}
+
+.studio-project-pill, .studio-project-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.2rem 0.65rem;
+    background: rgba(56, 189, 248, 0.1);
+    color: #38bdf8;
+    border: 1px solid rgba(56, 189, 248, 0.3);
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.studio-subtitle {
+    margin: 0.2rem 0 0 0;
+    font-size: 0.78rem;
+    color: var(--color-text-muted, #94a3b8);
+}
+
+.studio-header-right {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.save-status-indicator {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.35rem 0.75rem;
+    border-radius: 6px;
+}
+
+.save-status-saved {
+    background: rgba(16, 185, 129, 0.12);
+    color: #34d399;
+    border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.save-status-dirty {
+    background: rgba(245, 158, 11, 0.12);
+    color: #fbbf24;
+    border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.dirty-pulse-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #fbbf24;
+    display: inline-block;
+    box-shadow: 0 0 6px #fbbf24;
+}
+
+.studio-estimate-card {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    background: #0f172a;
+    padding: 0.4rem 0.9rem;
+    border-radius: 8px;
+    border: 1px solid #334155;
+    cursor: pointer;
+    transition: border-color 0.15s ease;
+}
+
+.studio-estimate-card:hover {
+    border-color: #38bdf8;
+}
+
+.estimate-label {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: #94a3b8;
+    font-weight: 600;
+}
+
+.estimate-amount {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #38bdf8;
+    font-feature-settings: "tnum";
+}
+
+.estimate-rooms-count {
+    font-size: 0.72rem;
+    color: #94a3b8;
+    font-weight: 500;
+}
+
+.studio-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-studio-save {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.45rem 1rem;
+    border-radius: 6px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-studio-save.is-dirty {
+    background: #2563eb;
+    color: #ffffff;
+    border: 1px solid #3b82f6;
+    box-shadow: 0 0 12px rgba(37, 99, 235, 0.35);
+}
+
+.btn-studio-save.is-dirty:hover {
+    background: #1d4ed8;
+    border-color: #60a5fa;
+}
+
+.btn-studio-save.is-clean {
+    background: #1e293b;
+    color: #64748b;
+    border: 1px solid #334155;
+    cursor: not-allowed;
+    opacity: 0.65;
+}
+
+.studio-alert-banner {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.65rem 1.75rem;
+    font-size: 0.85rem;
+    font-weight: 500;
+    border-bottom: 1px solid;
+}
+
+.studio-alert-banner.alert-success {
+    background: rgba(16, 185, 129, 0.12);
+    color: #34d399;
+    border-color: rgba(16, 185, 129, 0.3);
+}
+
+.studio-alert-banner.alert-error {
+    background: rgba(239, 68, 68, 0.12);
+    color: #f87171;
+    border-color: rgba(239, 68, 68, 0.3);
+}
+
+/* ── 2. Studio Workspace Layout (Sidebar + Main Area) ────────────────────── */
+.interior-workspace-layout {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+}
+
+/* ── Left Room Navigation Sidebar ────────────────────────────────────────── */
+.interior-room-sidebar {
+    width: 300px;
+    flex-shrink: 0;
+    background: #141f32;
+    border-right: 1px solid var(--color-border, #334155);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+}
+
+.sidebar-section-title {
+    padding: 0.85rem 1.15rem 0.45rem 1.15rem;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: #94a3b8;
+    font-weight: 700;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.floor-group-container {
+    margin-bottom: 0.35rem;
+}
+
+.floor-group-header {
+    padding: 0.45rem 1.15rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    background: rgba(15, 23, 42, 0.4);
+    border-top: 1px solid #1e293b;
+    border-bottom: 1px solid #1e293b;
+}
+
+.room-nav-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    padding: 0.5rem 0.75rem;
+}
+
+.room-nav-item {
+    display: flex;
+    flex-direction: column;
+    padding: 0.7rem 0.8rem;
+    border-radius: 8px;
+    background: #0f172a;
+    border: 1px solid #283548;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    text-align: left;
+    position: relative;
+}
+
+.room-nav-item:hover {
+    background: #1e293b;
+    border-color: #38bdf8;
+}
+
+.room-nav-item.is-active {
+    background: #1e3a5f;
+    border-color: #38bdf8;
+    box-shadow: 0 0 14px rgba(56, 189, 248, 0.25);
+}
+
+.room-nav-item-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.2rem;
+}
+
+.room-nav-name {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: #f8fafc;
+}
+
+.room-nav-item.is-active .room-nav-name {
+    color: #38bdf8;
+}
+
+.room-nav-dims {
+    font-size: 0.74rem;
+    color: #94a3b8;
+}
+
+.room-nav-design-badge {
+    margin-top: 0.35rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.72rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid #334155;
+    color: #cbd5e1;
+}
+
+.room-nav-design-badge.is-assigned {
+    background: rgba(16, 185, 129, 0.15);
+    border-color: rgba(16, 185, 129, 0.4);
+    color: #34d399;
+}
+
+.room-nav-cost-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 0.25rem;
+    font-size: 0.72rem;
+    color: #94a3b8;
+}
+
+.room-nav-cost-row strong {
+    color: #38bdf8;
+}
+
+.sidebar-stats-footer {
+    margin-top: auto;
+    padding: 0.85rem 1.15rem;
+    background: #0f172a;
+    border-top: 1px solid #334155;
+    font-size: 0.78rem;
+    color: #94a3b8;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+/* ── Right Main Gallery & Studio Workspace ───────────────────────────────── */
+.interior-main-content {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    padding: 1.25rem 1.75rem 2.5rem 1.75rem;
+    gap: 1.25rem;
+}
+
+/* Active Room Focus Banner */
+.active-room-banner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.9rem 1.35rem;
+    background: linear-gradient(90deg, #1e293b 0%, #172554 100%);
+    border: 1px solid #3b82f6;
+    border-radius: 12px;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.active-room-info h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.active-room-specs {
+    margin: 0.25rem 0 0 0;
+    font-size: 0.82rem;
+    color: #cbd5e1;
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.active-room-banner-actions {
+    display: flex;
+    gap: 0.6rem;
+    align-items: center;
+}
+
+/* Category Filter Bar */
+.interior-filters-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 12px;
+    padding: 0.85rem 1.15rem;
+}
+
+.category-tabs-row {
+    display: flex;
+    gap: 0.5rem;
+    overflow-x: auto;
+    padding-bottom: 0.25rem;
+}
+
+.category-tab-btn {
+    padding: 0.5rem 0.95rem;
+    border-radius: 8px;
+    background: #0f172a;
+    border: 1px solid #334155;
+    color: #94a3b8;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.category-tab-btn:hover {
+    background: #1e293b;
+    color: #ffffff;
+    border-color: #64748b;
+}
+
+.category-tab-btn.is-active {
+    background: #2563eb;
+    border-color: #60a5fa;
+    color: #ffffff;
+    box-shadow: 0 0 12px rgba(37, 99, 235, 0.4);
+}
+
+.tab-count-pill {
+    font-size: 0.7rem;
+    background: rgba(15, 23, 42, 0.7);
+    padding: 0.1rem 0.4rem;
+    border-radius: 9999px;
+}
+
+.category-tab-btn.is-active .tab-count-pill {
+    background: rgba(255, 255, 255, 0.25);
+}
+
+.filters-secondary-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.filters-dropdowns {
+    display: flex;
+    gap: 0.6rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.select-filter {
+    background: #0f172a;
+    border: 1px solid #334155;
+    color: #f8fafc;
+    border-radius: 6px;
+    padding: 0.4rem 0.75rem;
+    font-size: 0.82rem;
+    outline: none;
+    cursor: pointer;
+}
+
+.select-filter:focus {
+    border-color: #38bdf8;
+}
+
+.designs-counter-text {
+    font-size: 0.78rem;
+    color: #94a3b8;
+    white-space: nowrap;
+}
+
+.search-box-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.search-box-input {
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 0.4rem 0.75rem 0.4rem 2rem;
+    font-size: 0.82rem;
+    color: #f8fafc;
+    outline: none;
+    width: 210px;
+    transition: width 0.2s ease;
+}
+
+.search-box-input:focus {
+    border-color: #38bdf8;
+    width: 260px;
+}
+
+.search-box-icon {
+    position: absolute;
+    left: 0.65rem;
+    color: #64748b;
+    pointer-events: none;
+}
+
+/* ── 3. Responsive 2–3-Column Design Cards Gallery ───────────────────────── */
+.designs-gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1.5rem;
+}
+
+.design-gallery-card {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 14px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    position: relative;
+}
+
+.design-gallery-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 30px -5px rgba(0, 0, 0, 0.45);
+    border-color: #475569;
+}
+
+.design-gallery-card.is-assigned-to-room {
+    border-color: #10b981;
+    box-shadow: 0 0 20px rgba(16, 185, 129, 0.28);
+}
+
+.card-image-viewport {
+    position: relative;
+    width: 100%;
+    height: 200px;
+    background: #0f172a;
+    overflow: hidden;
+    cursor: pointer;
+}
+
+.card-image-viewport img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.design-gallery-card:hover .card-image-viewport img {
+    transform: scale(1.03);
+}
+
+.card-overlay-badge-left {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    background: rgba(15, 23, 42, 0.88);
+    color: #cbd5e1;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    padding: 0.25rem 0.55rem;
+    border-radius: 5px;
+    backdrop-filter: blur(4px);
+    border: 1px solid rgba(51, 65, 85, 0.7);
+}
+
+.card-overlay-badge-right {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 0.25rem 0.65rem;
+    border-radius: 9999px;
+    backdrop-filter: blur(4px);
+}
+
+.badge-tier-luxury {
+    background: rgba(245, 158, 11, 0.25);
+    color: #fbbf24;
+    border: 1px solid rgba(245, 158, 11, 0.5);
+}
+
+.badge-tier-premium {
+    background: rgba(168, 85, 247, 0.25);
+    color: #c084fc;
+    border: 1px solid rgba(168, 85, 247, 0.5);
+}
+
+.badge-tier-mid-range {
+    background: rgba(56, 189, 248, 0.25);
+    color: #38bdf8;
+    border: 1px solid rgba(56, 189, 248, 0.5);
+}
+
+.badge-tier-economy {
+    background: rgba(52, 211, 153, 0.25);
+    color: #34d399;
+    border: 1px solid rgba(52, 211, 153, 0.5);
+}
+
+.card-selection-stamp {
+    position: absolute;
+    bottom: 12px;
+    left: 12px;
+    background: #10b981;
+    color: #ffffff;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 0.3rem 0.65rem;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+}
+
+.card-details-content {
+    padding: 1.15rem 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+    flex: 1;
+}
+
+.card-heading-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 0.5rem;
+}
+
+.card-title-text {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #f8fafc;
+}
+
+.card-style-label {
+    font-size: 0.75rem;
+    color: #94a3b8;
+    font-weight: 600;
+}
+
+.card-desc-text {
+    margin: 0;
+    font-size: 0.82rem;
+    color: #94a3b8;
+    line-height: 1.5;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.card-features-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-top: 0.25rem;
+}
+
+.feature-tag-pill {
+    font-size: 0.7rem;
+    background: #0f172a;
+    color: #cbd5e1;
+    padding: 0.2rem 0.55rem;
+    border-radius: 4px;
+    border: 1px solid #334155;
+}
+
+.card-compat-notice {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.75rem;
+    padding: 0.4rem 0.65rem;
+    border-radius: 6px;
+    margin-top: 0.25rem;
+}
+
+.compat-pass {
+    background: rgba(16, 185, 129, 0.12);
+    color: #34d399;
+    border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.compat-warn {
+    background: rgba(245, 158, 11, 0.12);
+    color: #fbbf24;
+    border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.card-action-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.85rem 1.25rem;
+    background: rgba(15, 23, 42, 0.6);
+    border-top: 1px solid #334155;
+    gap: 0.6rem;
+}
+
+.compare-checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.78rem;
+    color: #94a3b8;
+    cursor: pointer;
+}
+
+.card-actions-group-right {
+    display: flex;
+    gap: 0.4rem;
+    align-items: center;
+}
+
+.btn-studio-select {
+    background: #2563eb;
+    color: #ffffff;
+    border: 1px solid #3b82f6;
+    border-radius: 6px;
+    padding: 0.45rem 0.85rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    transition: all 0.15s ease;
+}
+
+.btn-studio-select:hover {
+    background: #1d4ed8;
+    border-color: #60a5fa;
+}
+
+.btn-studio-select.is-selected {
+    background: #10b981;
+    border-color: #34d399;
+}
+
+.btn-studio-action {
+    background: #1e293b;
+    color: #cbd5e1;
+    border: 1px solid #475569;
+    border-radius: 6px;
+    padding: 0.45rem 0.75rem;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    transition: all 0.15s ease;
+}
+
+.btn-studio-action:hover {
+    background: #334155;
+    color: #ffffff;
+    border-color: #64748b;
+}
+
+/* ── 4. Plan-Aware Preview & Details Modal ────────────────────────────────── */
+.modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.78);
+    backdrop-filter: blur(6px);
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+    overflow-y: auto;
+}
+
+.modal-card {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 16px;
+    width: 100%;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+    animation: modalFadeIn 0.2s ease-out;
+}
+
+@keyframes modalFadeIn {
+    from { opacity: 0; transform: scale(0.97); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.25rem 1.75rem;
+    border-bottom: 1px solid #334155;
+    background: #182234;
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #f8fafc;
+}
+
+.btn-modal-close {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    cursor: pointer;
+    padding: 0.25rem;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.15s ease;
+}
+
+.btn-modal-close:hover {
+    color: #f8fafc;
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.detail-modal-tabs {
+    display: flex;
+    gap: 0.5rem;
+    border-bottom: 1px solid #334155;
+    padding: 0 1.5rem;
+    background: #182234;
+}
+
+.detail-tab-btn {
+    padding: 0.75rem 1.25rem;
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: #94a3b8;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.detail-tab-btn:hover {
+    color: #ffffff;
+}
+
+.detail-tab-btn.is-active {
+    color: #38bdf8;
+    border-bottom-color: #38bdf8;
+}
+
+.modal-body {
+    padding: 1.5rem 1.75rem;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    padding: 1rem 1.75rem;
+    border-top: 1px solid #334155;
+    background: #182234;
+}
+
+.plan-preview-container {
+    width: 100%;
+    min-height: 380px;
+    background: #0f172a;
+    border-radius: 10px;
+    border: 1px solid #334155;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.plan-clearances-banner {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    background: rgba(30, 41, 59, 0.7);
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    border: 1px solid #334155;
+    font-size: 0.78rem;
+    color: #93c5fd;
+}
+
+/* ── Customizer Grid & Breakdown ─────────────────────────────────────────── */
+.customizer-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+}
+
+.customizer-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.customizer-label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #cbd5e1;
+}
+
+.customizer-label small {
+    font-size: 0.72rem;
+    color: #94a3b8;
+    font-weight: 400;
+}
+
+.custom-select {
+    background: #0f172a;
+    border: 1px solid #334155;
+    color: #f8fafc;
+    border-radius: 8px;
+    padding: 0.55rem 0.85rem;
+    font-size: 0.82rem;
+    outline: none;
+    cursor: pointer;
+    margin-top: 0.2rem;
+}
+
+.custom-select:focus {
+    border-color: #38bdf8;
+}
+
+.counter-input-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-top: 0.2rem;
+}
+
+.btn-counter {
+    background: #0f172a;
+    border: 1px solid #334155;
+    color: #f8fafc;
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    font-size: 1rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.btn-counter:hover {
+    background: #334155;
+    border-color: #38bdf8;
+}
+
+.counter-value {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: #38bdf8;
+    min-width: 50px;
+    text-align: center;
+}
+
+.cost-breakdown-card {
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 10px;
+    padding: 1.15rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+}
+
+.breakdown-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.8rem;
+    color: #cbd5e1;
+    padding: 0.2rem 0;
+}
+
+.breakdown-row.total {
+    border-top: 1px solid #334155;
+    margin-top: 0.4rem;
+    padding-top: 0.6rem;
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: #38bdf8;
+}
+
+.no-double-count-note {
+    margin: 0.5rem 0 0 0;
+    font-size: 0.72rem;
+    color: #94a3b8;
+    line-height: 1.45;
+    background: rgba(30, 41, 59, 0.4);
+    padding: 0.5rem 0.65rem;
+    border-radius: 6px;
+    border: 1px solid #283548;
+}
+
+/* ── Comparison Table ────────────────────────────────────────────────────── */
+.comparison-table-wrap {
+    overflow-x: auto;
+}
+
+.comparison-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.82rem;
+}
+
+.comparison-table th, .comparison-table td {
+    padding: 0.85rem 1rem;
+    border: 1px solid #334155;
+    vertical-align: top;
+    text-align: left;
+}
+
+.comparison-table th {
+    background: #182234;
+    color: #94a3b8;
+    font-weight: 600;
+    width: 160px;
+}
+
+.comparison-img-thumb {
+    width: 100%;
+    height: 110px;
+    object-fit: cover;
+    border-radius: 8px;
+    margin-bottom: 0.5rem;
+}
+
+/* ── Room Summary Modal ──────────────────────────────────────────────────── */
+.room-summary-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+.room-summary-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    padding: 0.85rem 1rem;
+}
+
+.room-summary-info h4 {
+    margin: 0;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #f8fafc;
+}
+
+.room-summary-meta {
+    font-size: 0.75rem;
+    color: #94a3b8;
+    margin-top: 0.15rem;
+}
+
+.room-summary-cost {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #38bdf8;
+    text-align: right;
+}
+
+/* ── 5. Responsive Adjustments ───────────────────────────────────────────── */
+@media (max-width: 1024px) {
+    .interior-workspace-layout {
+        flex-direction: column;
+    }
+    .interior-room-sidebar {
+        width: 100%;
+        max-height: 220px;
+        border-right: none;
+        border-bottom: 1px solid #334155;
+    }
+    .designs-gallery-grid {
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    }
+    .customizer-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ── Workflow Stepper Bar ────────────────────────────────────────────────── */
+.studio-workflow-stepper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #0d1527;
+    border-bottom: 1px solid #1e293b;
+    padding: 0.65rem 1.5rem;
+    gap: 0.75rem;
+    overflow-x: auto;
+}
+
+.workflow-step {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.35rem 0.75rem;
+    border-radius: 6px;
+    background: transparent;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    opacity: 0.55;
+}
+
+.workflow-step.is-complete {
+    opacity: 0.85;
+}
+
+.workflow-step.is-active {
+    opacity: 1;
+    background: rgba(56, 189, 248, 0.12);
+    border: 1px solid rgba(56, 189, 248, 0.35);
+}
+
+.step-number {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    font-size: 0.7rem;
+    font-weight: 700;
+    background: #1e293b;
+    color: #94a3b8;
+}
+
+.workflow-step.is-complete .step-number {
+    background: rgba(16, 185, 129, 0.2);
+    color: #34d399;
+}
+
+.workflow-step.is-active .step-number {
+    background: #0284c7;
+    color: #ffffff;
+}
+
+.step-label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #cbd5e1;
+}
+
+.workflow-step.is-active .step-label {
+    color: #38bdf8;
+}
+
+.step-connector {
+    width: 28px;
+    height: 1px;
+    background: #334155;
+    flex-shrink: 0;
+}
+
+.no-room-category-notice {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: rgba(245, 158, 11, 0.1);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+    color: #fbbf24;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    font-size: 0.85rem;
+}
+
+/* ── 6. Dedicated Studio States (Loading, Missing Project, Missing Floor Plan) ── */
+.studio-state-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    min-height: calc(100vh - 120px);
+    padding: 2rem;
+    background: radial-gradient(circle at center, #111e38 0%, #0b1120 100%);
+}
+
+.studio-state-card {
+    max-width: 640px;
+    width: 100%;
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 14px;
+    padding: 2.5rem 2rem;
+    text-align: center;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+    position: relative;
+    overflow: hidden;
+}
+
+.studio-state-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #0284c7, #38bdf8, #818cf8);
+}
+
+.studio-state-card.error-card::before {
+    background: linear-gradient(90deg, #f59e0b, #ef4444);
+}
+
+.studio-state-card.blueprint-card::before {
+    background: linear-gradient(90deg, #38bdf8, #10b981);
+}
+
+.studio-state-icon-wrap {
+    width: 68px;
+    height: 68px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.25rem auto;
+}
+
+.studio-state-icon-wrap.loading {
+    background: rgba(56, 189, 248, 0.12);
+    border: 1px solid rgba(56, 189, 248, 0.3);
+}
+
+.studio-state-icon-wrap.warn {
+    background: rgba(245, 158, 11, 0.12);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.studio-state-icon-wrap.blueprint {
+    background: rgba(16, 185, 129, 0.12);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.studio-loading-spinner-wrap {
+    position: relative;
+    width: 72px;
+    height: 72px;
+    margin: 0 auto 1.5rem auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.studio-spinner-ring {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    border: 3px solid rgba(56, 189, 248, 0.15);
+    border-top-color: #38bdf8;
+    border-right-color: #0284c7;
+    animation: studio-spin 1s cubic-bezier(0.55, 0.15, 0.45, 0.85) infinite;
+}
+
+.studio-spinner-icon {
+    animation: studio-pulse 2s ease-in-out infinite;
+}
+
+@keyframes studio-spin {
+    to { transform: rotate(360deg); }
+}
+
+@keyframes studio-pulse {
+    0%, 100% { transform: scale(0.9); opacity: 0.8; }
+    50% { transform: scale(1.1); opacity: 1; }
+}
+
+.studio-loading-bar-wrap {
+    width: 100%;
+    max-width: 320px;
+    height: 4px;
+    background: rgba(51, 65, 85, 0.5);
+    border-radius: 9999px;
+    margin: 1.5rem auto 0 auto;
+    overflow: hidden;
+    position: relative;
+}
+
+.studio-loading-bar-indeterminate {
+    width: 45%;
+    height: 100%;
+    background: linear-gradient(90deg, #0284c7, #38bdf8);
+    border-radius: 9999px;
+    position: absolute;
+    animation: studio-indeterminate 1.5s ease-in-out infinite;
+}
+
+@keyframes studio-indeterminate {
+    0% { left: -45%; }
+    100% { left: 100%; }
+}
+
+.studio-state-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    background: rgba(56, 189, 248, 0.12);
+    color: #38bdf8;
+    border: 1px solid rgba(56, 189, 248, 0.3);
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.75rem;
+}
+
+.studio-state-title {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #f8fafc;
+    margin: 0 0 0.5rem 0;
+    letter-spacing: -0.01em;
+}
+
+.studio-state-desc {
+    font-size: 0.92rem;
+    color: #cbd5e1;
+    margin: 0 0 0.75rem 0;
+    line-height: 1.55;
+}
+
+.studio-state-subdesc {
+    font-size: 0.82rem;
+    color: #94a3b8;
+    margin: 0 0 1.75rem 0;
+    line-height: 1.5;
+}
+
+.studio-state-actions {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.btn-studio-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.65rem 1.35rem;
+    background: #0284c7;
+    color: #ffffff;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    text-decoration: none;
+}
+
+.btn-studio-primary:hover {
+    background: #0369a1;
+    box-shadow: 0 4px 12px rgba(2, 132, 199, 0.35);
+}
+
+.btn-studio-secondary {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.65rem 1.35rem;
+    background: rgba(51, 65, 85, 0.8);
+    color: #cbd5e1;
+    border: 1px solid #475569;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    text-decoration: none;
+}
+
+.btn-studio-secondary:hover {
+    background: #475569;
+    color: #ffffff;
+}
+
+.btn-studio-ghost {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.65rem 1.35rem;
+    background: transparent;
+    color: #94a3b8;
+    border: 1px dashed #334155;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    text-decoration: none;
+}
+
+.btn-studio-ghost:hover {
+    color: #38bdf8;
+    border-color: #38bdf8;
+    background: rgba(56, 189, 248, 0.05);
+}
+
+.studio-inspiration-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    background: rgba(30, 41, 59, 0.95);
+    border-bottom: 1px solid rgba(56, 189, 248, 0.3);
+    padding: 0.75rem 1.5rem;
+    color: #cbd5e1;
+    font-size: 0.84rem;
+    flex-wrap: wrap;
+}
+

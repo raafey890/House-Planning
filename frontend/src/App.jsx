@@ -23,6 +23,9 @@ import ProtectedRoute from "./routes/ProtectedRoute.jsx";
 import AppLayout from "./layouts/AppLayout.jsx";
 import ProjectsPage from "./pages/Projects/ProjectsPage.jsx";
 import ProjectWorkspace from "./pages/Projects/ProjectWorkspace.jsx";
+import InteriorStudioPage from "./pages/InteriorStudio/InteriorStudioPage.jsx";
+import ExteriorStudioPage from "./pages/ExteriorStudio/ExteriorStudioPage.jsx";
+import ErrorBoundary from "./components/ErrorBoundary.jsx";
 
 function App() {
   const initializeAuth = useAuthStore((state) => state.initializeAuth);
@@ -58,6 +61,50 @@ function App() {
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/profile" element={<ProfilePage />} />
         </Route>
+
+        {/* Dedicated Full-Page Interior Design Studio (no AppLayout sidebar/topbar) */}
+        <Route
+          path="/projects/:id/interior"
+          element={
+            <ProtectedRoute>
+              <ErrorBoundary title="Interior Design Studio">
+                <InteriorStudioPage />
+              </ErrorBoundary>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/projects/:projectId/interior"
+          element={
+            <ProtectedRoute>
+              <ErrorBoundary title="Interior Design Studio">
+                <InteriorStudioPage />
+              </ErrorBoundary>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Dedicated Full-Page Exterior Design Studio (no AppLayout sidebar/topbar) */}
+        <Route
+          path="/projects/:id/exterior"
+          element={
+            <ProtectedRoute>
+              <ErrorBoundary title="Exterior Design Studio">
+                <ExteriorStudioPage />
+              </ErrorBoundary>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/projects/:projectId/exterior"
+          element={
+            <ProtectedRoute>
+              <ErrorBoundary title="Exterior Design Studio">
+                <ExteriorStudioPage />
+              </ErrorBoundary>
+            </ProtectedRoute>
+          }
+        />
 
         <Route path="*" element={<NotFoundPage />} />
       </Routes>

@@ -1,66 +1,44 @@
-import React, { useState } from 'react';
-import { Sun, Wand2, Image as ImageIcon } from 'lucide-react';
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Sun, Sparkles, SlidersHorizontal, ArrowRight, ShieldCheck } from 'lucide-react';
 
-const ExteriorTab = ({ project }) => {
-    const [selectedStyle, setSelectedStyle] = useState(project.design_style || 'Modern');
+const ExteriorTab = ({ project, navigate: propNavigate }) => {
+  const localNavigate = useNavigate();
+  const navigate = propNavigate || localNavigate;
 
-    const styles = ['Modern', 'Contemporary', 'Minimalist', 'Traditional', 'Luxury', 'Mediterranean'];
-
-    // In production, this maps to exterior designs array fetched from Supabase
-    const generatedDesigns = []; 
-
-    return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)', height: '100%', overflowY: 'auto', paddingBottom: 'var(--space-8)' }}>
-            
-            {/* Generation Controls */}
-            <div className="card card-body" style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-6)', alignItems: 'flex-start' }}>
-                <div style={{ flex: '1 1 200px' }}>
-                    <div style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', marginBottom: '8px' }}>Project Context</div>
-                    <div style={{ fontSize: '0.95rem', fontWeight: 500 }}>
-                        {project.facing || 'Unknown'} Facing • G + {(project.floors || 1) - 1} • {project.plot_width || '?'}ft Frontage
-                    </div>
-                </div>
-                
-                <div style={{ flex: '1 1 200px' }}>
-                    <label className="form-label">Architectural Style</label>
-                    <select className="form-control" value={selectedStyle} onChange={(e) => setSelectedStyle(e.target.value)}>
-                        {styles.map(s => <option key={s} value={s}>{s}</option>)}
-                    </select>
-                </div>
-
-                <div style={{ flex: '2 1 300px' }}>
-                    <label className="form-label">Additional Prompt (Optional)</label>
-                    <input type="text" className="form-control" placeholder="e.g., 'brick facade, large glass windows'" />
-                </div>
-
-                <div style={{ flex: '1 1 100%', display: 'flex', justifyContent: 'flex-end' }}>
-                    <button className="btn btn-primary" disabled title="AI implementation pending in Phase 5" style={{ padding: '0 24px' }}>
-                        <Wand2 size={16} style={{ marginRight: '8px' }} />
-                        Generate Elevation
-                    </button>
-                </div>
-            </div>
-
-            {/* Gallery */}
-            <div style={{ flex: 1 }}>
-                <h3 className="text-h4 mb-4">Exterior Elevations</h3>
-                
-                {generatedDesigns.length === 0 ? (
-                    <div className="card card-body" style={{ height: '300px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--color-text-muted)' }}>
-                        <Sun size={48} style={{ opacity: 0.5, marginBottom: '16px' }} />
-                        <h4 className="text-h4" style={{ marginBottom: '8px' }}>No exterior elevations yet</h4>
-                        <p style={{ fontSize: '0.9rem', maxWidth: '300px', textAlign: 'center' }}>
-                            Generate photorealistic front-elevation concepts based on your project configuration.
-                        </p>
-                    </div>
-                ) : (
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 'var(--space-6)' }}>
-                        {/* Will map generated designs here */}
-                    </div>
-                )}
-            </div>
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)', height: '100%', overflowY: 'auto', paddingBottom: 'var(--space-8)' }}>
+      <div className="card" style={{ padding: '2.5rem', textAlign: 'center', background: 'linear-gradient(135deg, #111827 0%, #0f172a 100%)', border: '1px solid #1f2937', borderRadius: '12px' }}>
+        <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'rgba(56, 189, 248, 0.12)', color: '#38bdf8', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem auto' }}>
+          <Sun size={32} />
         </div>
-    );
+        <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#f8fafc', margin: '0 0 0.75rem 0' }}>
+          Dedicated Exterior Design Studio
+        </h2>
+        <p style={{ fontSize: '0.95rem', color: '#94a3b8', maxWidth: '580px', margin: '0 auto 1.75rem auto', lineHeight: '1.6' }}>
+          Explore 32 distinct architectural elevations across 8 styles (Modern Contemporary, Minimalist, Luxury Villa, Traditional Indian, Indian Modern, Mediterranean, Tropical Contemporary, and Premium Duplex) evaluated in real-time against your project's frontage and floor configuration.
+        </p>
+
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+          <button
+            className="btn btn-primary"
+            onClick={() => navigate(`/projects/${project.id}/exterior`)}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '0.75rem 1.75rem', fontSize: '1rem', fontWeight: 600 }}
+          >
+            <SlidersHorizontal size={18} /> Open Exterior Design Studio <ArrowRight size={16} />
+          </button>
+        </div>
+
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '1.5rem', marginTop: '2rem', fontSize: '0.8rem', color: '#64748b' }}>
+          <span>✓ 32 Architectural Designs</span>
+          <span>•</span>
+          <span>✓ Plan-Aware Compatibility</span>
+          <span>•</span>
+          <span>✓ Zero Civil Double-Counting</span>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 export default ExteriorTab;

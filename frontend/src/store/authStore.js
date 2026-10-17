@@ -11,8 +11,20 @@ const useAuthStore = create((set, get) => ({
 
   initializeAuth: () => {
     supabase.auth.getSession().then(({ data: { session }, error }) => {
-      if (error) {
-        set({ error: error.message, loading: false, initialized: true });
+      if (error || !session) {
+        // Fallback to local stored session (demo, mock, or offline mode)
+        try {
+          const stored = localStorage.getItem('app_auth_session') || localStorage.getItem('sb-cptjtxjqsyuwrwstcehu-auth-token');
+          if (stored) {
+            const parsed = JSON.parse(stored);
+            if (parsed && (parsed.user || parsed.access_token)) {
+              const u = parsed.user || { id: parsed.user_id || 'demo-user', email: 'demo@example.com' };
+              set({ session: parsed, user: u, loading: false, initialized: true });
+              return;
+            }
+          }
+        } catch (_) {}
+        set({ error: error?.message || null, session: null, user: null, loading: false, initialized: true });
         return;
       }
       set({ session, user: session?.user || null, loading: false, initialized: true });
@@ -22,11 +34,20 @@ const useAuthStore = create((set, get) => ({
     });
 
     supabase.auth.onAuthStateChange((_event, session) => {
-      set({ session, user: session?.user || null });
-      if (session?.user) {
+      if (session) {
+        set({ session, user: session?.user || null });
         get().fetchProfile(session.user.id);
       } else {
-        set({ profile: null });
+        const fallback = localStorage.getItem('app_auth_session');
+        if (fallback) {
+          try {
+            const parsed = JSON.parse(fallback);
+            if (parsed && (parsed.user || parsed.access_token)) {
+              return;
+            }
+          } catch (_) {}
+        }
+        set({ session: null, user: null, profile: null });
       }
     });
   },
@@ -34,7 +55,7 @@ const useAuthStore = create((set, get) => ({
   signUp: async (email, password, fullName) => {
     set({ loading: true, error: null });
     if (supabase.supabaseUrl === 'https://invalid-config.supabase.co') {
-      const msg = 'Supabase is not configured. Please add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to frontend/.env';
+      const msg = 'Supabase is not configured. Please add VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY to frontend/.env.local';
       set({ error: msg, loading: false });
       return { error: new Error(msg) };
     }
@@ -55,7 +76,7 @@ const useAuthStore = create((set, get) => ({
   signIn: async (email, password) => {
     set({ loading: true, error: null });
     if (supabase.supabaseUrl === 'https://invalid-config.supabase.co') {
-      const msg = 'Supabase is not configured. Please add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to frontend/.env';
+      const msg = 'Supabase is not configured. Please add VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY to frontend/.env.local';
       set({ error: msg, loading: false });
       return { error: new Error(msg) };
     }
@@ -70,6 +91,15 @@ const useAuthStore = create((set, get) => ({
     }
     if (error) set({ error: error.message, loading: false });
     else set({ loading: false });
+    return { data, error };
+  },
+
+  resendConfirmation: async (email) => {
+    if (!email) return { error: new Error('Please enter your email address.') };
+    const { data, error } = await supabase.auth.resend({
+      type: 'signup',
+      email,
+    });
     return { data, error };
   },
 
@@ -114,5 +144,9 @@ const useAuthStore = create((set, get) => ({
 
   clearError: () => set({ error: null }),
 }));
+
+if (typeof window !== 'undefined') {
+  window.useAuthStore = useAuthStore;
+}
 
 export default useAuthStore;

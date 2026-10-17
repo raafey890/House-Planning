@@ -1,7 +1,8 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { Grid, Clock, Sparkles } from 'lucide-react';
 
-const OverviewTab = ({ project, planner }) => {
+const OverviewTab = ({ project, planner, setActiveTab }) => {
     return (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 'var(--space-6)', overflowY: 'auto', paddingBottom: 'var(--space-8)' }}>
             
@@ -10,7 +11,7 @@ const OverviewTab = ({ project, planner }) => {
                     <h3 className="text-h3" style={{ marginBottom: '8px' }}>Project Ready for Generation</h3>
                     <p className="text-muted" style={{ margin: 0 }}>Your structural inputs and design preferences have been saved. Ready to generate AI floor plans.</p>
                 </div>
-                <button className="btn btn-primary" onClick={() => alert('AI Generation phase coming next.')}>
+                <button className="btn btn-primary" onClick={() => setActiveTab('floorplans')}>
                     <Sparkles size={18} style={{ marginRight: '8px' }} /> Generate Floor Plan
                 </button>
             </div>
@@ -30,7 +31,12 @@ const OverviewTab = ({ project, planner }) => {
                 <h3 className="text-h4 mb-4">Module Status</h3>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '0.95rem' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}><span className="text-muted">Floor Plan</span> <span style={{ fontWeight: 600, color: 'var(--color-primary)' }}>Ready to Generate</span></div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between' }}><span className="text-muted">Interior</span> <span style={{ fontWeight: 500 }}>Available after floor plan</span></div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span className="text-muted">Interior Studio</span> 
+                        <Link to={`/projects/${project.id}/interior`} style={{ fontWeight: 600, color: 'var(--color-primary)', textDecoration: 'none' }}>
+                            Open Studio →
+                        </Link>
+                    </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}><span className="text-muted">Exterior</span> <span style={{ fontWeight: 500 }}>Available after floor plan</span></div>
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}><span className="text-muted">3D View</span> <span style={{ fontWeight: 500 }}>Coming Soon</span></div>
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}><span className="text-muted">Cost Estimate</span> <span style={{ fontWeight: 500 }}>Not Generated</span></div>

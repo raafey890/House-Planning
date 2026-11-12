@@ -311,12 +311,13 @@ def solve_layout(context: Dict[str, Any], requirements: List[Dict[str, Any]], us
     """
     t_start = time.time()
 
+    fallback_reason = None
     # ── 0. Try Gemini hybrid planner first ─────────────────────────────────
     if use_gemini:
         try:
             from app.core.config import settings
             if settings.GEMINI_API_KEY:
-                from app.services.planning.gemini_planner import plan_with_gemini, GeminiPlannerError
+                from app.services.planning.gemini_planner import plan_with_gemini, GeminiPlannerError, GeminiQuotaExhaustedError
                 logger.info("=== Attempting Gemini hybrid planner ===")
 
                 layout_data = plan_with_gemini(context, requirements)
@@ -334,7 +335,12 @@ def solve_layout(context: Dict[str, Any], requirements: List[Dict[str, Any]], us
                 return gemini_result
             else:
                 logger.info("GEMINI_API_KEY not set — skipping Gemini planner")
+                fallback_reason = "gemini_api_key_missing"
+        except GeminiQuotaExhaustedError as qe:
+            fallback_reason = "gemini_quota_exhausted"
+            logger.warning("Gemini quota exhausted: %s — immediately switching to deterministic planner", qe)
         except Exception as e:
+            fallback_reason = f"gemini_error_{type(e).__name__}"
             logger.warning("Gemini hybrid planner failed, falling back to deterministic: %s: %s",
                            type(e).__name__, e)
 
@@ -406,5 +412,6 @@ def solve_layout(context: Dict[str, Any], requirements: List[Dict[str, Any]], us
     best_candidate_res["candidates_evaluated"] = len(CANDIDATES)
     best_candidate_res["valid_candidates"] = valid_candidates_count
     best_candidate_res["planner_source"] = "deterministic_fallback"
+    best_candidate_res["ai_fallback_reason"] = fallback_reason
 
     return best_candidate_res

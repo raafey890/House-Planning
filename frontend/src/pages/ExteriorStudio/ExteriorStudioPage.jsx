@@ -40,7 +40,8 @@ import {
   Undo,
   CheckCheck,
   HelpCircle,
-  FileText
+  FileText,
+  Box
 } from 'lucide-react';
 import { useProjectStore } from '../../store';
 import { EXTERIOR_DESIGNS, EXTERIOR_CATEGORIES } from '../../data/exteriorCatalog';
@@ -55,7 +56,9 @@ import {
   normalizeHex
 } from '../../data/exteriorColorCatalog';
 import { exteriorDesignService } from '../../services/exteriorDesignService';
-import Exterior3DViewer from '../../components/exterior/Exterior3DViewer';
+import { aiService } from '../../services/aiService';
+const Exterior3DViewer = React.lazy(() => import('../../components/exterior/Exterior3DViewer'));
+import ExteriorBlueprintViewer from '../../components/exterior/ExteriorBlueprintViewer';
 import FloorPlanViewer from '../Projects/components/FloorPlanViewer';
 import '../../styles/pages/exterior-studio.css';
 
@@ -90,6 +93,10 @@ export default function ExteriorStudioPage() {
 
   // 4-Step Wizard: 1 = Design, 2 = Customize, 3 = 3D Preview, 4 = Save
   const [currentStage, setCurrentStage] = useState(1);
+
+  // Authoritative selected design state
+  const [selectedDesignId, setSelectedDesignId] = useState(null);
+  const defaultsInitializedRef = React.useRef(false);
 
   // Step 1 Selection Modal State
   const [showStep1Modal, setShowStep1Modal] = useState(false);
@@ -142,6 +149,11 @@ export default function ExteriorStudioPage() {
   // Lighting & View Mode
   const [activeLightingMode, setActiveLightingMode] = useState('daylight');
 
+  // Visualization Switcher Workspace State (Phase 6G.5)
+  const [stage2ViewMode, setStage2ViewMode] = useState('3d'); // '3d' | 'elevation' | 'reference'
+  const [stage3ViewMode, setStage3ViewMode] = useState('elevation'); // 'elevation' | '3d' | 'reference' | 'split'
+  const [splitLeftMode, setSplitLeftMode] = useState('reference'); // 'reference' | 'elevation'
+
   // Stage 3 Technical CAD Elevation & Floor Plan State
   const [showCadView, setShowCadView] = useState(false);
   const [cadViewAngle, setCadViewAngle] = useState('front');
@@ -149,6 +161,7 @@ export default function ExteriorStudioPage() {
   const [cadLoading, setCadLoading] = useState(false);
   const [cadError, setCadError] = useState(null);
   const [floorPlanLayout, setFloorPlanLayout] = useState(null);
+  const [loadingFloorPlan, setLoadingFloorPlan] = useState(false);
   const [showRegenModal, setShowRegenModal] = useState(false);
 
   // ── 2. Load Project & Initial Data ──────────────────────────────────────────
@@ -180,12 +193,63 @@ export default function ExteriorStudioPage() {
         if (!isMounted) return;
         setProject(p || null);
 
-        // Load genuine floor plan layout data
+        // ── Load genuine floor plan layout data with multi-tier fallback ────
+        setLoadingFloorPlan(true);
+        let fpData = null;
+
+        // Tier 1: Check localStorage for cached floor plan
         const cachedFp = localStorage.getItem(`floorplan_${projectId}`);
         if (cachedFp) {
           try {
-            setFloorPlanLayout(JSON.parse(cachedFp));
+            const parsed = JSON.parse(cachedFp);
+            const candidate = parsed.layout_data || parsed;
+            if (candidate && Array.isArray(candidate.floors) && candidate.floors.length > 0) {
+              fpData = candidate;
+            }
           } catch (_) {}
+        }
+
+        // Tier 2: Check remote floor plans in Supabase
+        if (!fpData) {
+          try {
+            const remotePlans = await aiService.getFloorPlans(projectId);
+            if (remotePlans && remotePlans.length > 0) {
+              const latestPlan = remotePlans[0];
+              const candidate = latestPlan.layout_data || latestPlan;
+              if (candidate && Array.isArray(candidate.floors) && candidate.floors.length > 0) {
+                fpData = candidate;
+                try {
+                  localStorage.setItem(`floorplan_${projectId}`, JSON.stringify(fpData));
+                } catch (_) {}
+              }
+            }
+          } catch (err) {
+            console.warn('[ExteriorStudio] Remote floor plan fetch notice:', err?.message || err);
+          }
+        }
+
+        // Tier 3: Deterministic canonical architectural floor plan matching exact plot specs
+        if (!fpData) {
+          try {
+            const activeProj = p || {
+              id: projectId,
+              plot_width: plotW,
+              plot_length: plotL,
+              facing: facing,
+              floors: floors
+            };
+            fpData = generateCanonicalFloorPlan(activeProj);
+            try {
+              localStorage.setItem(`floorplan_${projectId}`, JSON.stringify(fpData));
+            } catch (_) {}
+          } catch (err) {
+            console.warn('[ExteriorStudio] Canonical floor plan generation notice:', err);
+          }
+        }
+
+        if (isMounted) {
+          if (fpData) setFloorPlanLayout(fpData);
+          setLoadingFloorPlan(false);
         }
 
         // Fetch evaluated options from backend
@@ -206,6 +270,9 @@ export default function ExteriorStudioPage() {
           if (isMounted && selData && selData.selection) {
             const sel = selData.selection;
             setSavedSelection(sel);
+            if (sel.design_id) {
+              setSelectedDesignId(sel.design_id);
+            }
             setTotalExteriorCost(selData.total_exterior_cost || 0);
 
             if (sel.colors) {
@@ -289,18 +356,23 @@ export default function ExteriorStudioPage() {
     };
   }, [projectId, currentProject, projects, fetchProject]);
 
-  // Derive Active Selected Design
+  // Derive Active Selected Design (Authoritative State)
   const activeSelectedDesign = useMemo(() => {
+    if (selectedDesignId) {
+      const found = evaluatedOptions.find((d) => d.id === selectedDesignId);
+      if (found) return found;
+    }
     if (savedSelection?.design_id) {
       const found = evaluatedOptions.find((d) => d.id === savedSelection.design_id);
       if (found) return found;
     }
     return evaluatedOptions[0] || EXTERIOR_DESIGNS[0];
-  }, [savedSelection, evaluatedOptions]);
+  }, [selectedDesignId, savedSelection, evaluatedOptions]);
 
-  // Sync design defaults if no saved selection
+  // Sync design defaults only ONCE on initial load if no saved selection exists
   useEffect(() => {
-    if (activeSelectedDesign && !savedSelection) {
+    if (!defaultsInitializedRef.current && activeSelectedDesign && !savedSelection) {
+      defaultsInitializedRef.current = true;
       const p = activeSelectedDesign.primary_paint_color?.hex || '#F4F4F0';
       const a = activeSelectedDesign.secondary_paint_color?.hex || '#2B313B';
       setCustomColors({
@@ -530,7 +602,7 @@ export default function ExteriorStudioPage() {
 
       if (andApply) {
         setTimeout(() => {
-          navigate(`/projects/${projectId}`);
+          navigate(`/projects/${projectId}?tab=3d`);
         }, 1200);
       }
     } catch (e) {
@@ -543,6 +615,7 @@ export default function ExteriorStudioPage() {
 
   // Step 1: Click Design Card
   const handleSelectDesignCard = (design) => {
+    setSelectedDesignId(design.id);
     const newColors = {
       primary_wall: design.primary_paint_color?.hex || '#F4F4F0',
       secondary_wall: '#E5E7EB',
@@ -639,10 +712,10 @@ export default function ExteriorStudioPage() {
     );
   }
 
-  const plotW = Number(project.plot_width) || 30;
-  const plotL = Number(project.plot_length) || 40;
-  const floors = Number(project.floors) || 2;
-  const facing = project.facing || 'North';
+  const plotW = Number(floorPlanLayout?.plot?.width || project.plot_width) || 50;
+  const plotL = Number(floorPlanLayout?.plot?.length || project.plot_length) || 80;
+  const floors = Number(floorPlanLayout?.floors?.length || project.floors) || 2;
+  const facing = floorPlanLayout?.plot?.facing || project.facing || 'South';
 
   const activeComponent = HOUSE_COMPONENTS.find((c) => c.id === activeComponentId) || HOUSE_COMPONENTS[0];
 
@@ -683,6 +756,15 @@ export default function ExteriorStudioPage() {
             <span className="cost-label">Exterior Upgrade:</span>
             <span className="cost-amount">₹{totalExteriorCost.toLocaleString('en-IN')}</span>
           </div>
+          <button
+            className="btn btn-primary"
+            style={{ fontSize: '0.82rem', padding: '0.45rem 0.95rem', display: 'inline-flex', alignItems: 'center', gap: '6px', fontWeight: 600, background: 'linear-gradient(135deg, #0284c7 0%, #2563eb 100%)' }}
+            onClick={() => navigate(`/projects/${projectId}?tab=3d`)}
+            title="Proceed to Unified 3D House Model"
+          >
+            <Box size={14} />
+            <span>Next: 3D View →</span>
+          </button>
         </div>
       </header>
 
@@ -952,6 +1034,7 @@ export default function ExteriorStudioPage() {
                           title="Proceed to customize colors"
                           onClick={() => {
                             handleSelectDesignCard(design);
+                            setShowStep1Modal(false);
                             setCurrentStage(2);
                           }}
                         >
@@ -967,126 +1050,12 @@ export default function ExteriorStudioPage() {
         )}
 
         {/* =================================================================== */}
-        {/* STEP 2: CUSTOMIZE COLORS AND MATERIALS (DEDICATED TWO-COLUMN LAYOUT) */}
+        {/* STEP 2: CUSTOMIZE COLORS AND LIVE 3D PREVIEW (PHASE 6G.3 WORKSPACE) */}
         {/* =================================================================== */}
         {currentStage === 2 && (
-          <div className="stage2-two-column-layout">
-            {/* ── LEFT SIDE: Reference Image, Summary & Working Control Actions ── */}
-            <aside className="stage2-left-panel">
-              {/* Selected Exterior Reference Card */}
-              <div className="stage2-ref-card">
-                <img
-                  src={activeSelectedDesign?.image_path || activeSelectedDesign?.image_url}
-                  alt={activeSelectedDesign?.name}
-                  className="stage2-ref-photo"
-                />
-                <div className="stage2-ref-details">
-                  <span className="active-pill-tag">{activeSelectedDesign?.category?.replace(/_/g, ' ')}</span>
-                  <h3 style={{ margin: '2px 0 0', fontSize: '1.15rem', color: '#f8fafc', fontWeight: 700 }}>
-                    {activeSelectedDesign?.name}
-                  </h3>
-                  <span style={{ fontSize: '0.78rem', color: '#38bdf8' }}>
-                    {activeSelectedDesign?.style} • {activeSelectedDesign?.budget_tier} Tier
-                  </span>
-                  <p style={{ margin: '4px 0 0', fontSize: '0.8rem', color: '#94a3b8', lineHeight: 1.4 }}>
-                    {activeSelectedDesign?.description}
-                  </p>
-                </div>
-              </div>
-
-              {/* Current Customization Summary (Live 12-Component Table) */}
-              <div style={{ background: '#111827', border: '1px solid #1f2937', borderRadius: '12px', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#f1f5f9', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <Sliders size={15} color="#38bdf8" /> Current Customization Summary (12 Components)
-                </span>
-                <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>Click any element row to select it for editing</span>
-
-                <div className="stage2-summary-table">
-                  {HOUSE_COMPONENTS.map((comp) => {
-                    const isEditing = activeComponentId === comp.id;
-                    const hex = customColors[comp.id] || comp.defaultHex;
-                    return (
-                      <div
-                        key={comp.id}
-                        className={`stage2-table-row ${isEditing ? 'active' : ''}`}
-                        onClick={() => setActiveComponentId(comp.id)}
-                        title={`Click to edit ${comp.name}`}
-                      >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden' }}>
-                          <div
-                            style={{
-                              width: '14px',
-                              height: '14px',
-                              borderRadius: '50%',
-                              backgroundColor: hex,
-                              border: '1px solid rgba(255, 255, 255, 0.4)',
-                              flexShrink: 0
-                            }}
-                          />
-                          <span style={{ color: isEditing ? '#38bdf8' : '#e2e8f0', fontWeight: isEditing ? 700 : 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            {comp.name}
-                          </span>
-                        </div>
-                        <span style={{ fontFamily: 'monospace', color: '#94a3b8', fontSize: '0.72rem' }}>{hex}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Working Controls: Undo, Reset Colors, Restore Defaults, Cancel Changes */}
-              <div style={{ background: '#111827', border: '1px solid #1f2937', borderRadius: '12px', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#f8fafc' }}>Customization History & Actions</span>
-                <div className="stage2-actions-toolbar">
-                  <button
-                    className="btn-ctrl-action"
-                    onClick={handleUndo}
-                    disabled={colorHistory.length === 0}
-                    title="Undo last unsaved color or material change"
-                  >
-                    <Undo size={14} /> Undo ({colorHistory.length})
-                  </button>
-
-                  <button
-                    className="btn-ctrl-action"
-                    onClick={handleResetColors}
-                    title="Reset colors to factory defaults of this exterior design"
-                  >
-                    <RotateCcw size={14} /> Reset Colors
-                  </button>
-
-                  <button
-                    className="btn-ctrl-action"
-                    onClick={handleRestoreDefaults}
-                    title="Restore factory default colors and materials"
-                  >
-                    <RefreshCw size={14} /> Restore Defaults
-                  </button>
-
-                  <button
-                    className="btn-ctrl-action"
-                    onClick={handleCancelChanges}
-                    title="Cancel unsaved changes and revert to project saved state"
-                  >
-                    <X size={14} /> Cancel Changes
-                  </button>
-                </div>
-              </div>
-
-              {/* Incremental Cost Breakdown Card */}
-              <div className="cost-breakdown-card" style={{ margin: 0 }}>
-                <div className="cost-header-row">
-                  <span className="cost-title">Incremental Elevation Upgrade</span>
-                  <span className="cost-val">₹{totalExteriorCost.toLocaleString('en-IN')}</span>
-                </div>
-                <div className="cost-note">
-                  Covers premium surface acrylics, feature louvers, and architectural lighting over the Phase 6D civil baseline (zero double counting).
-                </div>
-              </div>
-            </aside>
-
-            {/* ── RIGHT SIDE: Component Selector, Color Search, Palettes, Presets, Finishes ── */}
-            <section className="stage2-right-panel">
+          <div className="stage2-customizer-workspace">
+            {/* ── LEFT PANEL: Component Selector, Searchable Palette, Presets, Finishes, Live Summary ── */}
+            <div className="stage2-controls-panel">
               {/* 1. Component Selector Bar (12 Supported Components) */}
               <div className="component-selector-container">
                 <div className="component-selector-header">
@@ -1320,23 +1289,231 @@ export default function ExteriorStudioPage() {
                 </div>
               </div>
 
-              {/* Required Navigation Buttons */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '10px' }}>
-                <button
-                  className="btn btn-outline"
-                  onClick={() => setCurrentStage(1)}
-                >
-                  <ArrowLeft size={16} /> Back to Design Selection
-                </button>
-                <button
-                  className="btn btn-primary"
-                  onClick={() => setCurrentStage(3)}
-                >
-                  <span>Continue to 3D Preview</span>
-                  <ArrowRight size={16} />
-                </button>
+              {/* 5. Current Customization Summary (Live 12-Component Table) */}
+              <div style={{ background: '#111827', border: '1px solid #1f2937', borderRadius: '12px', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#f1f5f9', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Sliders size={15} color="#38bdf8" /> Current Customization Summary (12 Components)
+                </span>
+                <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>Click any element row to select it for editing</span>
+
+                <div className="stage2-summary-table">
+                  {HOUSE_COMPONENTS.map((comp) => {
+                    const isEditing = activeComponentId === comp.id;
+                    const hex = customColors[comp.id] || comp.defaultHex;
+                    return (
+                      <div
+                        key={comp.id}
+                        className={`stage2-table-row ${isEditing ? 'active' : ''}`}
+                        onClick={() => setActiveComponentId(comp.id)}
+                        title={`Click to edit ${comp.name}`}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden' }}>
+                          <div
+                            style={{
+                              width: '14px',
+                              height: '14px',
+                              borderRadius: '50%',
+                              backgroundColor: hex,
+                              border: '1px solid rgba(255, 255, 255, 0.4)',
+                              flexShrink: 0
+                            }}
+                          />
+                          <span style={{ color: isEditing ? '#38bdf8' : '#e2e8f0', fontWeight: isEditing ? 700 : 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {comp.name}
+                          </span>
+                        </div>
+                        <span style={{ fontFamily: 'monospace', color: '#94a3b8', fontSize: '0.72rem' }}>{hex}</span>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
-            </section>
+
+              {/* 6. Working Controls: Undo, Reset Colors, Restore Defaults, Cancel Changes */}
+              <div style={{ background: '#111827', border: '1px solid #1f2937', borderRadius: '12px', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#f8fafc' }}>Customization History & Actions</span>
+                <div className="stage2-actions-toolbar">
+                  <button
+                    className="btn-ctrl-action"
+                    onClick={handleUndo}
+                    disabled={colorHistory.length === 0}
+                    title="Undo last unsaved color or material change"
+                  >
+                    <Undo size={14} /> Undo ({colorHistory.length})
+                  </button>
+
+                  <button
+                    className="btn-ctrl-action"
+                    onClick={handleResetColors}
+                    title="Reset colors to factory defaults of this exterior design"
+                  >
+                    <RotateCcw size={14} /> Reset Colors
+                  </button>
+
+                  <button
+                    className="btn-ctrl-action"
+                    onClick={handleRestoreDefaults}
+                    title="Restore factory default colors and materials"
+                  >
+                    <RefreshCw size={14} /> Restore Defaults
+                  </button>
+
+                  <button
+                    className="btn-ctrl-action"
+                    onClick={handleCancelChanges}
+                    title="Cancel unsaved changes and revert to project saved state"
+                  >
+                    <X size={14} /> Cancel Changes
+                  </button>
+                </div>
+              </div>
+
+              {/* 7. Incremental Cost Breakdown Card */}
+              <div className="cost-breakdown-card" style={{ margin: 0 }}>
+                <div className="cost-header-row">
+                  <span className="cost-title">Incremental Elevation Upgrade</span>
+                  <span className="cost-val">₹{totalExteriorCost.toLocaleString('en-IN')}</span>
+                </div>
+                <div className="cost-note">
+                  Covers premium surface acrylics, feature louvers, and architectural lighting over the Phase 6D civil baseline (zero double counting).
+                </div>
+              </div>
+            </div>
+
+            {/* ── RIGHT PANEL: Visualization Switcher Workspace (2D Elevation / 3D Preview / Reference Photo) ── */}
+            <div className="stage2-preview-panel">
+              <div className="stage2-preview-sticky-card">
+                {/* Visualization Switcher Segmented Tabs */}
+                <div className="exterior-view-switcher-tabs">
+                  <button
+                    className={`exterior-view-tab-btn ${stage2ViewMode === '3d' ? 'is-active' : ''}`}
+                    onClick={() => setStage2ViewMode('3d')}
+                  >
+                    <Box size={14} />
+                    <span>Personalized 3D Preview</span>
+                  </button>
+                  <button
+                    className={`exterior-view-tab-btn ${stage2ViewMode === 'elevation' ? 'is-active' : ''}`}
+                    onClick={() => setStage2ViewMode('elevation')}
+                  >
+                    <Compass size={14} />
+                    <span>Personalized 2D Architectural Elevation</span>
+                  </button>
+                  <button
+                    className={`exterior-view-tab-btn ${stage2ViewMode === 'reference' ? 'is-active' : ''}`}
+                    onClick={() => setStage2ViewMode('reference')}
+                  >
+                    <Sparkles size={14} />
+                    <span>Architectural Reference Image</span>
+                  </button>
+                </div>
+
+                {/* Viewport content according to selected tab */}
+                {stage2ViewMode === '3d' && (
+                  <>
+                    <div className="stage2-viewer-header-badge">
+                      <div className="live-badge-dot" />
+                      <span>LIVE 3D EXTERIOR PREVIEW — INTERACTIVE ORBIT</span>
+                      <span style={{ marginLeft: 'auto', fontSize: '0.72rem', color: '#94a3b8' }}>
+                        {plotW}′ × {plotL}′ • {facing} Facing
+                      </span>
+                    </div>
+
+                    <div className="stage2-viewer-canvas-box">
+                      <React.Suspense fallback={<div className="p-8 text-center text-muted" style={{ padding: '2rem', textAlign: 'center', color: '#94a3b8' }}>Loading 3D preview...</div>}>
+                        <Exterior3DViewer
+                          project={project}
+                          selectedDesign={activeSelectedDesign}
+                          customColors={customColors}
+                          customMaterials={customMaterials}
+                          lightingMode={activeLightingMode}
+                          onToggleLighting={setActiveLightingMode}
+                        />
+                      </React.Suspense>
+                    </div>
+                  </>
+                )}
+
+                {stage2ViewMode === 'elevation' && (
+                  <ExteriorBlueprintViewer
+                    project={project}
+                    selectedDesign={activeSelectedDesign}
+                    customColors={customColors}
+                    customMaterials={customMaterials}
+                    lightingMode={activeLightingMode}
+                    height="530px"
+                    showToolbar={true}
+                  />
+                )}
+
+                {stage2ViewMode === 'reference' && (
+                  <div className="workspace-reference-container">
+                    <div className="workspace-reference-photo-box">
+                      <img
+                        src={activeSelectedDesign?.image_path || activeSelectedDesign?.image_url}
+                        alt={activeSelectedDesign?.name}
+                        className="workspace-reference-photo"
+                      />
+                      <div className="comparison-label-badge">ARCHITECTURAL INSPIRATION</div>
+                    </div>
+                    <div className="workspace-reference-meta">
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <h4 style={{ margin: 0, fontSize: '1rem', color: '#f8fafc', fontWeight: 700 }}>
+                          {activeSelectedDesign?.name}
+                        </h4>
+                        <span style={{ fontSize: '0.74rem', color: '#38bdf8', background: 'rgba(56, 189, 248, 0.1)', padding: '2px 8px', borderRadius: '4px' }}>
+                          {activeSelectedDesign?.category?.replace(/_/g, ' ')}
+                        </span>
+                      </div>
+                      <p style={{ margin: '4px 0 0', fontSize: '0.8rem', color: '#cbd5e1', lineHeight: 1.45 }}>
+                        {activeSelectedDesign?.description}
+                      </p>
+                      <div className="rule-guarantee-note" style={{ margin: '8px 0 0' }}>
+                        <Info size={15} style={{ flexShrink: 0, marginTop: '2px' }} />
+                        <span>
+                          <strong>Styling Reference:</strong> Colors and finishes you select in the left panel update both the <strong>2D Architectural Elevation</strong> and the <strong>Personalized 3D House Preview</strong> in real time.
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Card Footer: Reference Image Thumbnail & Navigation Actions */}
+                <div className="stage2-preview-footer">
+                  <div className="stage2-ref-mini-box">
+                    <img
+                      src={activeSelectedDesign?.image_path || activeSelectedDesign?.image_url}
+                      alt={activeSelectedDesign?.name}
+                      className="stage2-ref-thumb"
+                    />
+                    <div>
+                      <span className="ref-mini-title">{activeSelectedDesign?.name}</span>
+                      <span className="ref-mini-sub">
+                        {activeSelectedDesign?.category?.replace(/_/g, ' ')} • {activeSelectedDesign?.style}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="stage2-footer-nav-btns">
+                    <button
+                      className="btn btn-outline"
+                      onClick={() => setCurrentStage(1)}
+                      style={{ fontSize: '0.8rem', padding: '0.45rem 0.8rem' }}
+                    >
+                      <ArrowLeft size={14} /> Back
+                    </button>
+                    <button
+                      className="btn btn-primary"
+                      onClick={() => setCurrentStage(3)}
+                      style={{ fontSize: '0.8rem', padding: '0.45rem 0.9rem' }}
+                    >
+                      <span>Continue to Plan & 3D Review</span>
+                      <ArrowRight size={14} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         )}
 
@@ -1345,58 +1522,191 @@ export default function ExteriorStudioPage() {
         {/* =================================================================== */}
         {currentStage === 3 && (
           <div className="stage3-dedicated-layout">
-            {/* Top Comparison Row: Selected Reference vs Personalized 3D Preview */}
-            <div className="stage3-comparison-row">
-              {/* Left Column: Selected Exterior Reference */}
-              <div className="stage3-ref-side-card">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <h4 style={{ margin: 0, fontSize: '0.92rem', fontWeight: 700, color: '#f8fafc' }}>
-                    Selected Exterior Reference
-                  </h4>
-                  <span style={{ fontSize: '0.72rem', color: '#38bdf8' }}>Inspiration</span>
-                </div>
+            {/* Top: Visualization Switcher Workspace Tabs */}
+            <div className="exterior-view-switcher-tabs" style={{ borderRadius: '12px 12px 0 0', background: '#0d1527', border: '1px solid #1e293b', borderBottom: 'none' }}>
+              <button
+                className={`exterior-view-tab-btn ${stage3ViewMode === 'elevation' ? 'is-active' : ''}`}
+                onClick={() => setStage3ViewMode('elevation')}
+              >
+                <Compass size={15} />
+                <span>Personalized 2D Architectural Elevation</span>
+              </button>
+              <button
+                className={`exterior-view-tab-btn ${stage3ViewMode === '3d' ? 'is-active' : ''}`}
+                onClick={() => setStage3ViewMode('3d')}
+              >
+                <Box size={15} />
+                <span>Personalized 3D House Preview</span>
+              </button>
+              <button
+                className={`exterior-view-tab-btn ${stage3ViewMode === 'reference' ? 'is-active' : ''}`}
+                onClick={() => setStage3ViewMode('reference')}
+              >
+                <Sparkles size={15} />
+                <span>Architectural Reference Image</span>
+              </button>
+              <button
+                className={`exterior-view-tab-btn ${stage3ViewMode === 'split' ? 'is-active' : ''}`}
+                onClick={() => setStage3ViewMode('split')}
+              >
+                <Split size={15} />
+                <span>Split Comparison View</span>
+              </button>
+            </div>
 
-                <div className="stage3-ref-photo-wrap">
-                  <img
-                    src={activeSelectedDesign?.image_path || activeSelectedDesign?.image_url}
-                    alt={activeSelectedDesign?.name}
-                    className="stage3-ref-photo"
-                  />
-                  <div className="comparison-label-badge">ARCHITECTURAL REFERENCE</div>
-                </div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <span style={{ fontSize: '0.95rem', fontWeight: 700, color: '#f8fafc' }}>{activeSelectedDesign?.name}</span>
-                  <span style={{ fontSize: '0.78rem', color: '#94a3b8' }}>{activeSelectedDesign?.style} • {activeSelectedDesign?.category?.replace(/_/g, ' ')}</span>
-                  <p style={{ margin: '4px 0 0', fontSize: '0.78rem', color: '#cbd5e1', lineHeight: 1.4 }}>
-                    {activeSelectedDesign?.description}
-                  </p>
-                </div>
-
-                <div className="rule-guarantee-note" style={{ marginTop: 'auto' }}>
-                  <Info size={16} style={{ flexShrink: 0, marginTop: '2px' }} />
-                  <span>
-                    <strong>Architectural Note:</strong> This reference photograph provides styling, materiality, and fenestration inspiration.
-                    The 3D model represents your actual building configuration and selected finishes.
-                  </span>
-                </div>
-              </div>
-
-              {/* Right Column: Personalized 3D House Preview */}
-              <div className="stage3-viewer-side-card">
-                <div className="comparison-label-badge" style={{ zIndex: 12 }}>
-                  PERSONALIZED 3D HOUSE PREVIEW
-                </div>
-                <Exterior3DViewer
+            {/* Mode 1: Full-Width Dedicated 2D Architectural Elevation Drafting */}
+            {stage3ViewMode === 'elevation' && (
+              <div style={{ borderRadius: '0 0 12px 12px', overflow: 'hidden' }}>
+                <ExteriorBlueprintViewer
                   project={project}
                   selectedDesign={activeSelectedDesign}
                   customColors={customColors}
                   customMaterials={customMaterials}
                   lightingMode={activeLightingMode}
-                  onToggleLighting={setActiveLightingMode}
+                  height="600px"
+                  showToolbar={true}
                 />
               </div>
-            </div>
+            )}
+
+            {/* Mode 2: Full-Width Dedicated 3D House Preview */}
+            {stage3ViewMode === '3d' && (
+              <div
+                className="stage3-viewer-side-card"
+                style={{ height: '620px', borderRadius: '0 0 12px 12px', border: '1px solid #1e293b', position: 'relative' }}
+              >
+                <div className="comparison-label-badge" style={{ zIndex: 12 }}>
+                  PERSONALIZED 3D HOUSE PREVIEW — INTERACTIVE ORBIT
+                </div>
+                <React.Suspense fallback={<div className="p-8 text-center text-muted" style={{ padding: '4rem', textAlign: 'center', color: '#94a3b8' }}>Loading interactive 3D viewer...</div>}>
+                  <Exterior3DViewer
+                    project={project}
+                    selectedDesign={activeSelectedDesign}
+                    customColors={customColors}
+                    customMaterials={customMaterials}
+                    lightingMode={activeLightingMode}
+                    onToggleLighting={setActiveLightingMode}
+                  />
+                </React.Suspense>
+              </div>
+            )}
+
+            {/* Mode 3: Architectural Reference Image */}
+            {stage3ViewMode === 'reference' && (
+              <div className="workspace-reference-container" style={{ borderRadius: '0 0 12px 12px' }}>
+                <div className="workspace-reference-photo-box" style={{ maxHeight: '480px' }}>
+                  <img
+                    src={activeSelectedDesign?.image_path || activeSelectedDesign?.image_url}
+                    alt={activeSelectedDesign?.name}
+                    className="workspace-reference-photo"
+                  />
+                  <div className="comparison-label-badge">ARCHITECTURAL REFERENCE</div>
+                </div>
+                <div className="workspace-reference-meta">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <h4 style={{ margin: 0, fontSize: '1.1rem', color: '#f8fafc', fontWeight: 700 }}>
+                      {activeSelectedDesign?.name}
+                    </h4>
+                    <span style={{ fontSize: '0.78rem', color: '#38bdf8', background: 'rgba(56, 189, 248, 0.1)', padding: '2px 8px', borderRadius: '4px' }}>
+                      {activeSelectedDesign?.category?.replace(/_/g, ' ')} • {activeSelectedDesign?.style}
+                    </span>
+                  </div>
+                  <p style={{ margin: '4px 0 0', fontSize: '0.84rem', color: '#cbd5e1', lineHeight: 1.5 }}>
+                    {activeSelectedDesign?.description}
+                  </p>
+                  <div className="rule-guarantee-note" style={{ margin: '8px 0 0' }}>
+                    <Info size={16} style={{ flexShrink: 0, marginTop: '2px' }} />
+                    <span>
+                      <strong>Styling & Proportion Inspiration:</strong> This reference photograph served as the architectural benchmark.
+                      Your customized palette and materials are faithfully adapted to the {plotW}′ × {plotL}′ plot dimensions in both the 2D Elevation and 3D Model.
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Mode 4: Split Comparison Row (Reference / 2D Elevation vs 3D House Preview) */}
+            {stage3ViewMode === 'split' && (
+              <div className="stage3-comparison-row" style={{ marginTop: 0 }}>
+                {/* Left Column: Reference Image OR 2D Elevation */}
+                <div className="stage3-ref-side-card" style={{ borderRadius: '0 0 0 12px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                    <div className="elevation-segmented-pills">
+                      <button
+                        className={`elevation-pill-btn ${splitLeftMode === 'reference' ? 'is-active' : ''}`}
+                        onClick={() => setSplitLeftMode('reference')}
+                      >
+                        <ImageIcon size={12} style={{ marginRight: '4px' }} /> Reference Photo
+                      </button>
+                      <button
+                        className={`elevation-pill-btn ${splitLeftMode === 'elevation' ? 'is-active' : ''}`}
+                        onClick={() => setSplitLeftMode('elevation')}
+                      >
+                        <Compass size={12} style={{ marginRight: '4px' }} /> 2D Elevation
+                      </button>
+                    </div>
+                    <span style={{ fontSize: '0.72rem', color: '#38bdf8' }}>Comparison Left</span>
+                  </div>
+
+                  {splitLeftMode === 'reference' ? (
+                    <>
+                      <div className="stage3-ref-photo-wrap">
+                        <img
+                          src={activeSelectedDesign?.image_path || activeSelectedDesign?.image_url}
+                          alt={activeSelectedDesign?.name}
+                          className="stage3-ref-photo"
+                        />
+                        <div className="comparison-label-badge">ARCHITECTURAL REFERENCE</div>
+                      </div>
+
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '8px' }}>
+                        <span style={{ fontSize: '0.95rem', fontWeight: 700, color: '#f8fafc' }}>{activeSelectedDesign?.name}</span>
+                        <span style={{ fontSize: '0.78rem', color: '#94a3b8' }}>{activeSelectedDesign?.style} • {activeSelectedDesign?.category?.replace(/_/g, ' ')}</span>
+                        <p style={{ margin: '4px 0 0', fontSize: '0.78rem', color: '#cbd5e1', lineHeight: 1.4 }}>
+                          {activeSelectedDesign?.description}
+                        </p>
+                      </div>
+                    </>
+                  ) : (
+                    <div style={{ flex: 1, minHeight: '380px', display: 'flex', flexDirection: 'column' }}>
+                      <ExteriorBlueprintViewer
+                        project={project}
+                        selectedDesign={activeSelectedDesign}
+                        customColors={customColors}
+                        customMaterials={customMaterials}
+                        lightingMode={activeLightingMode}
+                        height="380px"
+                        showToolbar={false}
+                      />
+                    </div>
+                  )}
+
+                  <div className="rule-guarantee-note" style={{ marginTop: 'auto' }}>
+                    <Info size={16} style={{ flexShrink: 0, marginTop: '2px' }} />
+                    <span>
+                      <strong>Architectural Note:</strong> Compare your selected inspiration directly alongside the personalized interactive 3D model.
+                    </span>
+                  </div>
+                </div>
+
+                {/* Right Column: Personalized 3D House Preview */}
+                <div className="stage3-viewer-side-card" style={{ borderRadius: '0 0 12px 0' }}>
+                  <div className="comparison-label-badge" style={{ zIndex: 12 }}>
+                    PERSONALIZED 3D HOUSE PREVIEW
+                  </div>
+                  <React.Suspense fallback={<div className="p-8 text-center text-muted" style={{ padding: '3rem', textAlign: 'center', color: '#94a3b8' }}>Loading 3D preview...</div>}>
+                    <Exterior3DViewer
+                      project={project}
+                      selectedDesign={activeSelectedDesign}
+                      customColors={customColors}
+                      customMaterials={customMaterials}
+                      lightingMode={activeLightingMode}
+                      onToggleLighting={setActiveLightingMode}
+                    />
+                  </React.Suspense>
+                </div>
+              </div>
+            )}
 
             {/* Bottom Row: Compact Floor Plan Summary & Compatibility Verification */}
             <div className="stage3-plan-summary-card">
@@ -1455,7 +1765,7 @@ export default function ExteriorStudioPage() {
                   style={{ fontSize: '0.8rem', padding: '0.45rem 0.9rem' }}
                   onClick={() => setShowCadView(!showCadView)}
                 >
-                  <Maximize2 size={14} /> {showCadView ? 'Hide Architectural Blueprint' : 'View Floor Plan & CAD Blueprint'}
+                  <Maximize2 size={14} /> {showCadView ? 'Hide Interior Floor Plan' : 'View Interior Floor Plan & CAD Layout'}
                 </button>
 
                 <button
@@ -1469,18 +1779,75 @@ export default function ExteriorStudioPage() {
 
               {/* Optional Blueprint Viewport */}
               {showCadView && (
-                <div style={{ height: '360px', background: '#0f172a', borderRadius: '12px', border: '1px solid #1f2937', overflow: 'hidden', marginTop: '10px' }}>
-                  <FloorPlanViewer
-                    layoutData={floorPlanLayout}
-                    plotWidth={plotW}
-                    plotLength={plotL}
-                    project={project}
-                  />
+                <div
+                  className="stage3-blueprint-container"
+                  style={{
+                    marginTop: '14px',
+                    borderRadius: '12px',
+                    overflow: 'hidden',
+                    border: '1px solid #334155',
+                    background: '#0f172a',
+                    boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.4)'
+                  }}
+                >
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      padding: '10px 16px',
+                      background: '#1e293b',
+                      borderBottom: '1px solid #334155',
+                      flexWrap: 'wrap',
+                      gap: '8px'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <Layers size={16} color="#38bdf8" />
+                      <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#f8fafc' }}>
+                        Architectural Floor Plan CAD Working Drawing (Interior Rooms & Partitions)
+                      </span>
+                      <span
+                        style={{
+                          fontSize: '0.72rem',
+                          background: '#0369a1',
+                          color: '#e0f2fe',
+                          padding: '2px 8px',
+                          borderRadius: '4px',
+                          fontWeight: 600
+                        }}
+                      >
+                        {plotW}′ × {plotL}′ • {facing} Facing • G+{floors > 1 ? floors - 1 : 0}
+                      </span>
+                    </div>
+                    <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>
+                      Drag to Pan • Wheel to Zoom • Level tabs above • Internal Room Dimensions
+                    </span>
+                  </div>
+                  <div style={{ height: '520px', position: 'relative' }}>
+                    <FloorPlanViewer
+                      layoutData={floorPlanLayout}
+                      plotWidth={plotW}
+                      plotLength={plotL}
+                      project={project}
+                      loading={loadingFloorPlan}
+                      loadingMessage="Loading architectural CAD blueprint..."
+                    />
+                  </div>
                 </div>
               )}
 
               {/* Required Navigation Buttons */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '10px', borderTop: '1px solid #1f2937' }}>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  paddingTop: '16px',
+                  marginTop: '12px',
+                  borderTop: '1px solid #1f2937'
+                }}
+              >
                 <button className="btn btn-outline" onClick={() => setCurrentStage(2)}>
                   <ArrowLeft size={16} /> Back to Customization
                 </button>
@@ -1600,9 +1967,10 @@ export default function ExteriorStudioPage() {
                     className="btn btn-primary"
                     onClick={() => handleSaveSelection(activeSelectedDesign, true)}
                     disabled={saving}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '0.65rem 1.35rem', fontWeight: 600, background: 'linear-gradient(135deg, #0284c7 0%, #2563eb 100%)' }}
                   >
                     <CheckCheck size={16} />
-                    <span>Save & Apply to Project</span>
+                    <span>Save & Proceed to 3D View →</span>
                   </button>
                 </div>
               </div>
@@ -1612,7 +1980,7 @@ export default function ExteriorStudioPage() {
       </main>
 
       {/* ── Step 1: Design Selected Confirmation Modal ────────────────────── */}
-      {showStep1Modal && activeSelectedDesign && (
+      {showStep1Modal && currentStage === 1 && activeSelectedDesign && (
         <div className="step1-selection-modal-backdrop">
           <div className="step1-selection-modal">
             <div className="step1-modal-header">
@@ -1707,9 +2075,29 @@ export default function ExteriorStudioPage() {
               <br /><br />
               <strong>Selecting an exterior design does NOT require plan regeneration</strong>, as this exterior option is already physically compatible with your plot dimensions.
             </p>
-            <div className="modal-actions-row">
+            <div className="modal-actions-row" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
               <button className="btn btn-outline" onClick={() => setShowRegenModal(false)}>
                 Keep Existing Floor Plan
+              </button>
+              <button
+                className="btn btn-outline"
+                style={{ borderColor: '#38bdf8', color: '#38bdf8' }}
+                onClick={() => {
+                  const canonical = generateCanonicalFloorPlan(project || {
+                    id: projectId,
+                    plot_width: plotW,
+                    plot_length: plotL,
+                    facing: facing,
+                    floors: floors
+                  });
+                  setFloorPlanLayout(canonical);
+                  try {
+                    localStorage.setItem(`floorplan_${projectId}`, JSON.stringify(canonical));
+                  } catch (_) {}
+                  setShowRegenModal(false);
+                }}
+              >
+                <Sparkles size={14} /> Re-sync Canonical Blueprint
               </button>
               <button
                 className="btn btn-primary"

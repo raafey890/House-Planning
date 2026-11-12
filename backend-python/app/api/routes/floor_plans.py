@@ -77,7 +77,16 @@ async def generate_floor_plan(
             detail="Not authorized to access this project"
         )
 
-    context = await project_service.get_planning_context(project_id, supabase)
+    # Retrieve raw planning context and validate requirements
+    raw_context = await project_service.get_planning_context(project_id, supabase)
+    from app.validators.requirements_validator import validate_requirements, requirements_fingerprint
+    try:
+        validated_req = validate_requirements(raw_context)
+        context = validated_req.model_dump()
+        current_fp = requirements_fingerprint(validated_req)
+    except Exception as ve:
+        logger.warning("Planning requirements validation failed for project=%s: %s", project_id, ve)
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(ve))
 
     job_id = await FloorplanService.create_generation_job(
         supabase, project_id, user_id,
@@ -130,6 +139,7 @@ async def generate_floor_plan(
             else:
                 # Deterministic path: needs post-processing
                 logger.info("[DETERMINISTIC] Using OR-Tools planner, running post-processor...")
+                layout_data = post_process_layout(engine_res)
 
                 # --- DIAGNOSTIC STAGE 1: After OR-Tools solve ---
                 fl_cnt = len(engine_res["floors"])
@@ -143,8 +153,16 @@ async def generate_floor_plan(
                     logger.info(f"[DIAGNOSTIC 1] Floor {fl_lvl}: {len(indoor_r)} indoor room(s), area={fl_area} sq ft: {r_desc}")
                 logger.info(f"[DIAGNOSTIC 1] Total indoor area: {total_indoor_area} sq ft")
 
-                layout_data = post_process_layout(engine_res)
+            if not layout_data or not hasattr(layout_data, "floors"):
+                raise RuntimeError("No valid layout geometry produced by planner")
 
+            # After obtaining layout_data, verify floor count matches request
+            generated_floors = len(layout_data.floors)
+            requested_floors = validated_req.floors if 'validated_req' in locals() else None
+            if requested_floors and generated_floors != requested_floors:
+                raise RuntimeError(
+                    f"Generated floor count {generated_floors} does not match requested {requested_floors}"
+                )
                 # --- DIAGNOSTIC STAGE 2: After post_processor ---
                 tot_indoor = 0
                 tot_outdoor = 0
@@ -271,7 +289,8 @@ async def generate_floor_plan(
             raise ValueError(f"Requirement preservation check failed: only {total_indoor_rooms} indoor rooms present. Aborting save.")
 
         floor_plan_id = await FloorplanService.save_floor_plan(
-            supabase, project_id, user_id, job_id, layout_data
+            supabase, project_id, user_id, job_id, layout_data,
+            requirements_fingerprint=current_fp
         )
         await FloorplanService.update_generation_job(
             supabase, job_id, "Completed", layout_data.model_dump()
@@ -287,7 +306,8 @@ async def generate_floor_plan(
             floor_plan_id=floor_plan_id,
             layout_data=layout_data.model_dump(),
             validation={"valid": True, "errors": [], **validation_results},
-            metrics=metrics
+            metrics=metrics,
+            planner_source=provider_used
         )
 
     # ── FAILURE: try saved-plan fallback ──────────────────────────────────
@@ -299,8 +319,10 @@ async def generate_floor_plan(
         supabase, job_id, "Failed", error_message=" | ".join(errors)
     )
 
-    # Check for the most recent valid saved plan
-    saved_plan = await FloorplanService.get_latest_successful(supabase, project_id)
+    # Check for the most recent valid saved plan with matching requirements
+    saved_plan = await FloorplanService.get_latest_successful(
+        supabase, project_id, current_fingerprint=current_fp
+    )
 
     if saved_plan:
         logger.info(
@@ -313,12 +335,12 @@ async def generate_floor_plan(
             floor_plan_id=saved_plan["id"],
             layout_data=saved_plan["layout_data"],
             validation={"valid": True, "errors": []},
-            message="Live generation couldn't complete. Showing your most recent saved plan."
+            message="Live generation couldn't complete. Showing your most recent saved plan (same requirements)."
         )
 
-    # ── No saved plan — return structured safe error ─────────────────────
+    # ── No matching saved plan — return structured safe error ─────────────
     logger.warning(
-        "No saved plan fallback available  |  project=%s",
+        "No matching saved plan fallback available  |  project=%s",
         project_id
     )
 

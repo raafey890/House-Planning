@@ -8,12 +8,19 @@ function Footer() {
             <div className="container">
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--space-12)', paddingBottom: 'var(--space-12)', borderBottom: '1px solid var(--color-border)' }}>
                     <div style={{ gridColumn: '1 / -1', '@media (min-width: 768px)': { gridColumn: 'span 2' } }}>
-                        <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '12px', textDecoration: 'none', marginBottom: 'var(--space-6)' }}>
-                            <Box size={24} color="var(--color-primary)" />
-                            <h2 style={{ fontSize: '1.25rem', fontWeight: 600, margin: 0, color: 'var(--color-primary)', letterSpacing: '-0.02em' }}>AI House Planner</h2>
+                        <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '12px', textDecoration: 'none', marginBottom: 'var(--space-4)' }}>
+                            <Box size={26} color="#C6A46A" />
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <h2 style={{ fontSize: '1.2rem', fontWeight: 700, margin: 0, color: 'var(--color-primary)', letterSpacing: '0.14em', lineHeight: 1.15 }}>
+                                    ROY DESIGNS
+                                </h2>
+                                <span style={{ fontSize: '0.62rem', color: '#C6A46A', letterSpacing: '0.08em', textTransform: 'uppercase', fontWeight: 600 }}>
+                                    AI House Planning &amp; Visualization System
+                                </span>
+                            </div>
                         </Link>
-                        <p style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem', maxWidth: '300px', lineHeight: 1.6 }}>
-                            Intelligent architecture and design automation for the modern era.
+                        <p style={{ color: 'var(--color-text-muted)', fontSize: '0.88rem', maxWidth: '340px', lineHeight: 1.6, marginTop: '8px' }}>
+                            AI-Powered Architecture &amp; Design. Intelligent floor planning, luxury styling, 3D visualization, and automated estimation.
                         </p>
                     </div>
 
@@ -36,7 +43,9 @@ function Footer() {
                 </div>
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 'var(--space-8)' }}>
-                    <p style={{ color: 'var(--color-text-muted)', fontSize: '0.85rem', margin: 0 }}>© {new Date().getFullYear()} AI House Planner. All rights reserved.</p>
+                    <p style={{ color: 'var(--color-text-muted)', fontSize: '0.85rem', margin: 0 }}>
+                        © {new Date().getFullYear()} ROY DESIGNS. All rights reserved.
+                    </p>
                     <div style={{ display: 'flex', gap: '16px' }}>
                         <a href="#" style={{ color: 'var(--color-text-muted)' }}><Globe size={18}/></a>
                     </div>

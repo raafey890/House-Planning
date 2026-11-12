@@ -32,6 +32,15 @@ class GeminiPlannerError(Exception):
     pass
 
 
+class GeminiQuotaExhaustedError(GeminiPlannerError):
+    """Raised when Gemini returns 429 / RESOURCE_EXHAUSTED.
+
+    Signals to the caller that retrying Gemini is pointless for this
+    billing period and the deterministic solver should be used immediately.
+    """
+    pass
+
+
 def _build_gemini_architectural_prompt(context: Dict[str, Any], requirements: List[Dict[str, Any]]) -> str:
     """
     Build a detailed architectural planning prompt for Gemini.
@@ -655,15 +664,40 @@ def plan_with_gemini(context: Dict[str, Any], requirements: List[Dict[str, Any]]
                 break
             except Exception as e:
                 last_error = e
-                err_str = str(e)
+                err_str = str(e).lower()
                 status_label = "503" if "503" in err_str else "404" if "404" in err_str else type(e).__name__
-                logger.warning("Gemini model=%s mode=%s failed: %s (%s)", model_name, mode, status_label, err_str[:100])
+                logger.warning("Gemini model=%s mode=%s failed: %s (%s)", model_name, mode, status_label, str(e)[:100])
+
+                # ── Quota exhausted → fail fast, no more retries ──
+                is_quota = any(ind in err_str for ind in [
+                    "429", "resource_exhausted", "rate_limit", "rate limit",
+                    "quota", "too many requests",
+                ])
+                if is_quota:
+                    logger.warning(
+                        "Gemini quota/rate-limit detected — skipping all retries, "
+                        "deterministic solver should be used"
+                    )
+                    raise GeminiQuotaExhaustedError(
+                        f"Gemini API quota exhausted ({str(e)[:80]}). "
+                        "Falling back to deterministic solver."
+                    )
+
                 if mode == "structured" and ("503" in err_str or "unavailable" in err_str):
                     # Immediately try text mode for this model
                     continue
                 break
 
     if layout_data is None:
+        # Check if last error was quota-related (shouldn't reach here due
+        # to the raise above, but guard defensively)
+        if last_error:
+            le_str = str(last_error).lower()
+            if any(ind in le_str for ind in ["429", "resource_exhausted", "quota"]):
+                raise GeminiQuotaExhaustedError(
+                    f"Gemini API quota exhausted ({str(last_error)[:80]}). "
+                    "Falling back to deterministic solver."
+                )
         raise GeminiPlannerError(f"Gemini failed across models {models_to_try}: {last_error}")
 
     # 3. Quick validation

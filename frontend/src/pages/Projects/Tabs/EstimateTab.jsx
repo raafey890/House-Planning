@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { costEstimationService } from '../../../services/costEstimationService';
 import { interiorDesignService } from '../../../services/interiorDesignService';
+import { exteriorDesignService } from '../../../services/exteriorDesignService';
 import '../../../styles/pages/cost-estimate.css';
 
 const CATEGORY_NAMES = {
@@ -33,13 +34,14 @@ const CATEGORY_NAMES = {
     labor: 'Labor Workmanship'
 };
 
-const EstimateTab = ({ project }) => {
+const EstimateTab = ({ project, setActiveTab }) => {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(true);
     const [recalculating, setRecalculating] = useState(false);
     const [error, setError] = useState(null);
     const [estimate, setEstimate] = useState(null);
     const [interiorData, setInteriorData] = useState(null);
+    const [exteriorData, setExteriorData] = useState(null);
     const [activeCategory, setActiveCategory] = useState('all');
 
     // Rates editing modal state
@@ -55,12 +57,14 @@ const EstimateTab = ({ project }) => {
         setLoading(true);
         setError(null);
         try {
-            const [costData, intData] = await Promise.all([
+            const [costData, intData, extData] = await Promise.all([
                 costEstimationService.getLatestEstimate(project.id),
-                interiorDesignService.getProjectSelections(project.id).catch(() => null)
+                interiorDesignService.getProjectSelections(project.id).catch(() => null),
+                exteriorDesignService.getProjectSelection(project.id).catch(() => null)
             ]);
             setEstimate(costData);
             setInteriorData(intData);
+            setExteriorData(extData);
             initializeEditableRates(costData.rates_snapshot);
         } catch (err) {
             console.error('Failed to load estimate:', err);
@@ -248,12 +252,17 @@ const EstimateTab = ({ project }) => {
                             Based on {cost_summary.cost_per_sq_ft_denominator}
                         </div>
 
-                        {interiorData?.total_interior_cost > 0 && (
+                        {(interiorData?.total_interior_cost > 0 || (exteriorData?.selection?.additional_cost || exteriorData?.total_exterior_cost || 0) > 0) && (
                             <div style={{ marginTop: '0.65rem', paddingTop: '0.6rem', borderTop: '1px solid rgba(255,255,255,0.15)', fontSize: '0.85rem' }}>
-                                <span style={{ color: '#94a3b8' }}>Turnkey Total (Civil + Interior Upgrades): </span>
+                                <span style={{ color: '#94a3b8' }}>Turnkey Total (Civil + Upgrades): </span>
                                 <strong style={{ color: '#38bdf8', fontSize: '1.05rem' }}>
-                                    ₹ {(cost_summary.grand_total + interiorData.total_interior_cost).toLocaleString('en-IN')}
+                                    ₹ {(cost_summary.grand_total + (interiorData?.total_interior_cost || 0) + (exteriorData?.selection?.additional_cost || exteriorData?.total_exterior_cost || 0)).toLocaleString('en-IN')}
                                 </strong>
+                                <div style={{ fontSize: '0.74rem', color: '#94a3b8', marginTop: '2px' }}>
+                                    Civil: ₹ {cost_summary.grand_total.toLocaleString('en-IN')}
+                                    {interiorData?.total_interior_cost > 0 && ` • Interiors: ₹ ${interiorData.total_interior_cost.toLocaleString('en-IN')}`}
+                                    {(exteriorData?.selection?.additional_cost || exteriorData?.total_exterior_cost || 0) > 0 && ` • Exterior: ₹ ${(exteriorData?.selection?.additional_cost || exteriorData?.total_exterior_cost || 0).toLocaleString('en-IN')}`}
+                                </div>
                             </div>
                         )}
                     </div>
@@ -379,6 +388,55 @@ const EstimateTab = ({ project }) => {
                         </>
                     )}
                 </div>
+
+                {/* Exterior Upgrades Package (Phase 6G) */}
+                {(() => {
+                    const extAdditionalCost = exteriorData?.selection?.additional_cost || exteriorData?.total_exterior_cost || 0;
+                    return (
+                        <div className="estimate-metric-card" style={{
+                            background: extAdditionalCost > 0 
+                                ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.12), rgba(30, 41, 59, 0.95))' 
+                                : undefined,
+                            borderColor: extAdditionalCost > 0 ? 'rgba(16, 185, 129, 0.4)' : undefined
+                        }}>
+                            <div className="metric-label">
+                                <span>EXTERIOR UPGRADES (PHASE 6G)</span>
+                                <Building2 size={16} color="#10b981" />
+                            </div>
+                            {extAdditionalCost > 0 ? (
+                                <>
+                                    <div className="metric-value-large" style={{ color: '#10b981' }}>
+                                        ₹ {extAdditionalCost.toLocaleString('en-IN')}
+                                    </div>
+                                    <div className="metric-subtext">
+                                        {exteriorData?.selection?.design_name || 'Selected Architecture Package'}
+                                    </div>
+                                    <Link 
+                                        to={`/projects/${project.id}/exterior`} 
+                                        style={{ marginTop: '8px', fontSize: '0.8rem', color: '#10b981', textDecoration: 'none', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                                    >
+                                        Edit Exterior Finishes →
+                                    </Link>
+                                </>
+                            ) : (
+                                <>
+                                    <div className="metric-value-large" style={{ color: '#94a3b8', fontSize: '1.1rem' }}>
+                                        ₹ 0 (Civil Baseline)
+                                    </div>
+                                    <div className="metric-subtext">
+                                        Standard plaster & basic exterior paint included in civil.
+                                    </div>
+                                    <Link 
+                                        to={`/projects/${project.id}/exterior`} 
+                                        style={{ marginTop: '8px', fontSize: '0.8rem', color: '#10b981', textDecoration: 'none', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                                    >
+                                        Personalize 32 Exterior Styles →
+                                    </Link>
+                                </>
+                            )}
+                        </div>
+                    );
+                })()}
             </div>
 
             {/* Area Schedule & Geometry Context Grid */}
@@ -555,6 +613,60 @@ const EstimateTab = ({ project }) => {
                 </ul>
                 <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid rgba(255, 255, 255, 0.08)', fontStyle: 'italic', color: '#94a3b8' }}>
                     {disclaimer}
+                </div>
+            </div>
+
+            {/* ── END-TO-END WORKFLOW ROADMAP ─────────────────────────────────── */}
+            <div style={{
+                marginTop: '1.5rem',
+                padding: '1.25rem 1.5rem',
+                background: 'rgba(15, 23, 42, 0.8)',
+                border: '1px solid rgba(56, 189, 248, 0.25)',
+                borderRadius: '12px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '12px'
+            }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <CheckCircle2 size={18} color="#10b981" />
+                        <span style={{ fontSize: '0.95rem', fontWeight: 700, color: '#f8fafc' }}>
+                            Full Project Planning & Visualization Flow Complete
+                        </span>
+                    </div>
+                    <span style={{ fontSize: '0.75rem', color: '#10b981', background: 'rgba(16, 185, 129, 0.1)', padding: '3px 10px', borderRadius: '9999px', fontWeight: 600, border: '1px solid rgba(16, 185, 129, 0.25)' }}>
+                        All 6 Stages Integrated
+                    </span>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '8px' }}>
+                    {[
+                        { num: '01', title: 'Requirements', tab: 'planner', action: () => navigate(`/projects/${project.id}/planner`) },
+                        { num: '02', title: 'Floor Plans', tab: 'floorplans', action: () => setActiveTab ? setActiveTab('floorplans') : navigate(`/projects/${project.id}?tab=floorplans`) },
+                        { num: '03', title: 'Interior Studio', tab: 'interior', action: () => navigate(`/projects/${project.id}/interior`) },
+                        { num: '04', title: 'Exterior Studio', tab: 'exterior', action: () => navigate(`/projects/${project.id}/exterior`) },
+                        { num: '05', title: 'Unified 3D View', tab: '3d', action: () => setActiveTab ? setActiveTab('3d') : navigate(`/projects/${project.id}?tab=3d`) },
+                        { num: '06', title: 'Cost Estimate', tab: 'estimate', active: true }
+                    ].map(step => (
+                        <div
+                            key={step.num}
+                            onClick={step.action}
+                            style={{
+                                padding: '10px 12px',
+                                background: step.active ? 'rgba(56, 189, 248, 0.15)' : 'rgba(30, 41, 59, 0.7)',
+                                border: `1px solid ${step.active ? '#38bdf8' : 'rgba(255, 255, 255, 0.08)'}`,
+                                borderRadius: '8px',
+                                cursor: step.action ? 'pointer' : 'default',
+                                transition: 'all 0.15s ease'
+                            }}
+                        >
+                            <div style={{ fontSize: '0.7rem', color: step.active ? '#38bdf8' : '#94a3b8', fontWeight: 700 }}>
+                                Step {step.num}
+                            </div>
+                            <div style={{ fontSize: '0.82rem', fontWeight: 600, color: step.active ? '#ffffff' : '#cbd5e1', marginTop: '2px' }}>
+                                {step.title}
+                            </div>
+                        </div>
+                    ))}
                 </div>
             </div>
 

@@ -3,7 +3,7 @@ function Navbar() {
         <nav class="navbar">
 
             <div class="logo">
-                AI House Planner
+                ROY DESIGNS
             </div>
 
             <ul class="nav-links">

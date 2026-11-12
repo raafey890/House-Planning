@@ -46,8 +46,15 @@ function Navbar() {
             }}
         >
             <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '12px', textDecoration: 'none' }}>
-                <Box size={24} color="var(--color-primary)" />
-                <h2 style={{ fontSize: '1.25rem', fontWeight: 600, margin: 0, color: 'var(--color-primary)', letterSpacing: '-0.02em' }}>AI House Planner</h2>
+                <Box size={26} color="#C6A46A" />
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <h2 style={{ fontSize: '1.2rem', fontWeight: 700, margin: 0, color: 'var(--color-primary)', letterSpacing: '0.14em', lineHeight: 1.15 }}>
+                        ROY DESIGNS
+                    </h2>
+                    <span style={{ fontSize: '0.62rem', color: '#C6A46A', letterSpacing: '0.08em', textTransform: 'uppercase', fontWeight: 600 }}>
+                        AI House Planning &amp; Visualization System
+                    </span>
+                </div>
             </Link>
 
             <nav style={{ display: 'none', '@media (min-width: 768px)': { display: 'block' } }}>

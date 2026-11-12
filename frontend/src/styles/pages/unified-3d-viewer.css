@@ -1,0 +1,352 @@
+/* ==========================================================================
+   PHASE 6H — UNIFIED 3D HOUSE VISUALIZATION STYLES
+   ========================================================================== */
+
+.unified-3d-page-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: calc(100vh - 180px);
+  min-height: 640px;
+  background: #090d16;
+  border-radius: 12px;
+  border: 1px solid #1e293b;
+  overflow: hidden;
+  position: relative;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+}
+
+/* ── Top Navigation & Control Toolbar ────────────────────────────────────── */
+.unified-3d-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.65rem 1rem;
+  background: #0f172a;
+  border-bottom: 1px solid #1e293b;
+  gap: 0.75rem;
+  z-index: 20;
+  flex-wrap: wrap;
+}
+
+.unified-3d-toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+/* ── Segmented Control Pills ─────────────────────────────────────────────── */
+.unified-pill-group {
+  display: inline-flex;
+  background: #141e33;
+  padding: 3px;
+  border-radius: 6px;
+  border: 1px solid #1e293b;
+}
+
+.unified-pill-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border: none;
+  background: transparent;
+  color: #94a3b8;
+  font-size: 0.76rem;
+  font-weight: 600;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.unified-pill-btn:hover {
+  color: #f8fafc;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.unified-pill-btn.is-active {
+  background: #0284c7;
+  color: #ffffff;
+  box-shadow: 0 1px 4px rgba(2, 132, 199, 0.4);
+}
+
+/* ── Select Dropdowns ────────────────────────────────────────────────────── */
+.unified-select {
+  background: #141e33;
+  color: #f1f5f9;
+  border: 1px solid #1e293b;
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.unified-select:focus {
+  border-color: #38bdf8;
+}
+
+/* ── Action Buttons ──────────────────────────────────────────────────────── */
+.unified-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: #1e293b;
+  color: #f1f5f9;
+  border: 1px solid #334155;
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.unified-action-btn:hover {
+  background: #334155;
+  border-color: #38bdf8;
+  color: #38bdf8;
+}
+
+.unified-action-btn.active {
+  background: rgba(56, 189, 248, 0.15);
+  border-color: #38bdf8;
+  color: #38bdf8;
+}
+
+/* ── 3D Canvas Viewport Stage ────────────────────────────────────────────── */
+.unified-3d-viewport {
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+  background: #0a0f1d;
+}
+
+.unified-3d-canvas-container {
+  width: 100%;
+  height: 100%;
+}
+
+.unified-3d-canvas-container canvas {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+}
+
+/* ── Viewport Floating HUDs ──────────────────────────────────────────────── */
+.unified-viewport-badge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(8px);
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: #f8fafc;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  pointer-events: none;
+  z-index: 10;
+}
+
+.unified-badge-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 6px #10b981;
+}
+
+/* ── Floating Room Inspector Card ────────────────────────────────────────── */
+.unified-room-inspector-card {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  max-width: 360px;
+  width: calc(100% - 32px);
+  background: rgba(15, 23, 42, 0.94);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  border-radius: 12px;
+  padding: 1rem;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.55);
+  z-index: 25;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  animation: slideInRight 0.25s ease-out;
+}
+
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(16px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.room-inspector-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.room-inspector-title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #f8fafc;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.room-inspector-pill {
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 4px;
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+}
+
+.room-inspector-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  background: rgba(30, 41, 59, 0.6);
+  padding: 0.65rem;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.room-inspector-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.room-inspector-item-label {
+  font-size: 0.65rem;
+  color: #94a3b8;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.room-inspector-item-val {
+  font-size: 0.78rem;
+  color: #f1f5f9;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.room-inspector-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.room-inspector-link-btn {
+  font-size: 0.74rem;
+  color: #38bdf8;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 600;
+  padding: 0;
+  transition: color 0.15s ease;
+}
+
+.room-inspector-link-btn:hover {
+  color: #7dd3fc;
+  text-decoration: underline;
+}
+
+.room-inspector-exit-btn {
+  font-size: 0.72rem;
+  background: #334155;
+  color: #f8fafc;
+  border: none;
+  border-radius: 4px;
+  padding: 3px 8px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: background 0.15s ease;
+}
+
+.room-inspector-exit-btn:hover {
+  background: #475569;
+}
+
+.room-inspector-nav-row {
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+  margin-top: 4px;
+}
+
+.room-inspector-nav-row .room-inspector-exit-btn {
+  background: rgba(30, 41, 59, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 5px 10px;
+}
+
+.room-inspector-nav-row .room-inspector-exit-btn:hover {
+  background: rgba(51, 65, 85, 0.95);
+  border-color: rgba(56, 189, 248, 0.4);
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* ── Viewport Bottom Controls Help ───────────────────────────────────────── */
+.unified-viewport-hint {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(4px);
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.68rem;
+  color: #94a3b8;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  z-index: 10;
+}
+
+/* ── Responsive Adaptations ──────────────────────────────────────────────── */
+@media (max-width: 960px) {
+  .unified-3d-toolbar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .unified-3d-toolbar-group {
+    width: 100%;
+    overflow-x: auto;
+  }
+}

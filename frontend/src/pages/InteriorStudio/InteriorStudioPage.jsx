@@ -20,7 +20,9 @@ import {
     Eye,
     Maximize2,
     SlidersHorizontal,
-    ExternalLink
+    ExternalLink,
+    Sun,
+    ArrowRight
 } from 'lucide-react';
 import { useProjectStore } from '../../store';
 import { INTERIOR_DESIGNS, INTERIOR_CATEGORIES, BUDGET_TIERS, STYLE_OPTIONS } from '../../data/interiorCatalog';
@@ -791,6 +793,19 @@ export default function InteriorStudioPage() {
                             {isSaving ? <RefreshCw size={15} className="animate-spin" /> : <Save size={15} />}
                             {isSaving ? 'Saving...' : 'Save Selections'}
                         </button>
+                        <button
+                            className="btn-studio-header-next"
+                            onClick={async () => {
+                                if (isDirty) {
+                                    await handleSaveToProject();
+                                }
+                                navigate(`/projects/${projectId}/exterior`);
+                            }}
+                            title="Proceed to Exterior Design Studio"
+                        >
+                            <Sun size={15} />
+                            <span>Next: Exterior Studio →</span>
+                        </button>
                     </div>
                 </div>
             </header>
@@ -1106,6 +1121,50 @@ export default function InteriorStudioPage() {
                 </main>
             </div>
 
+            {/* ── GUIDED BOTTOM WORKFLOW BAR ─────────────────────────────────── */}
+            <div className="interior-studio-bottom-nav">
+                <div className="interior-bottom-nav-left">
+                    <span className="interior-bottom-nav-status">
+                        {configuredCount > 0 ? (
+                            <>
+                                <CheckCircle size={16} color="#10b981" />
+                                <span>{configuredCount} of {layoutRooms.length} room{layoutRooms.length === 1 ? '' : 's'} styled</span>
+                            </>
+                        ) : (
+                            <>
+                                <Sparkles size={16} color="#38bdf8" />
+                                <span>Select a room and choose an interior design</span>
+                            </>
+                        )}
+                    </span>
+                    <span className="interior-bottom-nav-cost">
+                        Interior Upgrade: ₹{totalInteriorCost.toLocaleString('en-IN')}
+                    </span>
+                </div>
+                <div className="interior-bottom-nav-actions">
+                    <button 
+                        className={`btn-studio-save ${isDirty ? 'is-dirty' : 'is-clean'}`}
+                        onClick={handleSaveToProject}
+                        disabled={isSaving || !isDirty}
+                    >
+                        {isSaving ? <RefreshCw size={14} className="animate-spin" /> : <Save size={14} />}
+                        <span>{isSaving ? 'Saving...' : 'Save Selections'}</span>
+                    </button>
+                    <button
+                        className="btn-studio-next-stage"
+                        onClick={async () => {
+                            if (isDirty) {
+                                await handleSaveToProject();
+                            }
+                            navigate(`/projects/${projectId}/exterior`);
+                        }}
+                    >
+                        <span>Proceed to Exterior Studio</span>
+                        <ArrowRight size={16} />
+                    </button>
+                </div>
+            </div>
+
             {/* ── 3. INTERACTIVE DESIGN DETAILS & PLAN-AWARE PREVIEW MODAL ───── */}
             {activeDetailDesign && (
                 <DetailAndPreviewModal
@@ -1140,6 +1199,13 @@ export default function InteriorStudioPage() {
                     onSelectRoom={(roomId) => {
                         handleSelectRoom(roomId);
                         setIsSummaryModalOpen(false);
+                    }}
+                    onProceedToExterior={async () => {
+                        setIsSummaryModalOpen(false);
+                        if (isDirty) {
+                            await handleSaveToProject();
+                        }
+                        navigate(`/projects/${projectId}/exterior`);
                     }}
                 />
             )}
@@ -1525,7 +1591,7 @@ function ComparisonModal({ designs, room, onClose, onSelectDesign }) {
 }
 
 // ── ROOM SUMMARY MODAL ────────────────────────────────────────────────────────
-function RoomSummaryModal({ layoutRooms, selections, totalCost, onClose, onSelectRoom }) {
+function RoomSummaryModal({ layoutRooms, selections, totalCost, onClose, onSelectRoom, onProceedToExterior }) {
     return (
         <div className="modal-backdrop" onClick={onClose}>
             <div className="modal-card" style={{ maxWidth: '650px' }} onClick={e => e.stopPropagation()}>
@@ -1574,8 +1640,14 @@ function RoomSummaryModal({ layoutRooms, selections, totalCost, onClose, onSelec
                     </div>
                 </div>
 
-                <div className="modal-footer">
+                <div className="modal-footer" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <button className="btn-studio-action" onClick={onClose}>Close</button>
+                    {onProceedToExterior && (
+                        <button className="btn-studio-next-stage" onClick={onProceedToExterior}>
+                            <span>Proceed to Exterior Studio</span>
+                            <ArrowRight size={15} />
+                        </button>
+                    )}
                 </div>
             </div>
         </div>

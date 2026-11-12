@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import FloorPlanViewer from '../components/FloorPlanViewer';
 import { PenTool, AlertTriangle, Info, Grid, Loader2, RefreshCw, Calendar, CheckCircle, Sparkles } from 'lucide-react';
 import { aiService } from '../../../services/aiService';
+import { generateCanonicalFloorPlan } from '../../../services/canonicalFloorPlanGenerator';
 
 /**
  * FloorPlansTab — Phase 6C.3 Demo Reliability
@@ -83,6 +84,15 @@ const FloorPlansTab = ({ project, planner, navigate }) => {
                     setValidationResults(null);
                     setMetricsData(plans[0].layout_data?.metrics || null);
                 }
+            } else if (!hadCached && project.plot_width && project.plot_length) {
+                const canonical = generateCanonicalFloorPlan(project);
+                setLayoutData(canonical);
+                setSelectedPlanId('canonical-plan');
+                setSavedPlans([{ id: 'canonical-plan', version_name: 'Architectural Blueprint V1', layout_data: canonical, created_at: new Date().toISOString() }]);
+                setMetricsData(canonical.metrics || null);
+                try {
+                    localStorage.setItem(`floorplan_${project.id}`, JSON.stringify(canonical));
+                } catch (_) {}
             }
         } catch (err) {
             console.warn('[FloorPlansTab] Network sync notice:', err.message);
@@ -146,8 +156,12 @@ const FloorPlansTab = ({ project, planner, navigate }) => {
                 setSelectedPlanId(result.floor_plan_id || null);
                 setValidationResults(result.validation);
                 setMetricsData(result.metrics);
-                setStatusMessage('');
-                setNotice({ message: 'Floor plan generated successfully!', type: 'success' });
+                setNotice({
+                    message: result.planner_source === 'deterministic_fallback'
+                        ? 'Floor plan generated successfully using architectural constraint solver (OR-Tools)!'
+                        : 'Floor plan generated successfully!',
+                    type: 'success'
+                });
 
                 // Refresh versions list but DO NOT overwrite the active layout
                 await loadSavedPlans(true);

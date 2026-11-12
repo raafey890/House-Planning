@@ -1,4 +1,4 @@
-﻿import pytest
+import pytest
 import jwt
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.testclient import TestClient
@@ -15,7 +15,7 @@ def test_auth(user_id: str = Depends(get_current_user)):
 
 app.include_router(floor_plans.router)
 
-client = TestClient(app)
+client = TestClient(app, raise_server_exceptions=False)
 
 def test_missing_auth_header():
     response = client.get("/test/auth")

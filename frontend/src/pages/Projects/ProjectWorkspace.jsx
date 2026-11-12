@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
+import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useProjectStore, usePlannerStore } from '../../store';
 import { Map, Grid, Image as ImageIcon, Calculator, Settings, ArrowLeft, Box as BoxIcon, Sun } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -8,20 +8,49 @@ import OverviewTab from './Tabs/OverviewTab';
 import FloorPlansTab from './Tabs/FloorPlansTab';
 import InteriorTab from './Tabs/InteriorTab';
 import ExteriorTab from './Tabs/ExteriorTab';
-import ThreeDTab from './Tabs/ThreeDTab';
 import EstimateTab from './Tabs/EstimateTab';
+
+const ThreeDTab = React.lazy(() => import('./Tabs/ThreeDTab'));
 
 const ProjectWorkspace = () => {
     const { id } = useParams();
     const navigate = useNavigate();
+    const [searchParams, setSearchParams] = useSearchParams();
     const { projects, fetchProjects, currentProject } = useProjectStore();
-    const planner = usePlannerStore(); // Used just for checking readiness
+    const planner = usePlannerStore();
     const { loadProjectSettings } = planner;
-    const [activeTab, setActiveTab] = useState('overview');
+    
+    const urlTab = searchParams.get('tab');
+    const [activeTab, setActiveTab] = useState(urlTab || 'overview');
 
-    const project = projects.find(p => p.id === id) || (currentProject?.id === id ? currentProject : null) || (() => {
-        try { return JSON.parse(localStorage.getItem(`project_${id}`)); } catch (_) { return null; }
-    })();
+    // Sync state when URL tab changes
+    useEffect(() => {
+        if (urlTab && urlTab !== activeTab) {
+            if (urlTab === 'interior') {
+                navigate(`/projects/${id}/interior`);
+            } else if (urlTab === 'exterior') {
+                navigate(`/projects/${id}/exterior`);
+            } else if (urlTab === 'planner') {
+                navigate(`/projects/${id}/planner`);
+            } else {
+                setActiveTab(urlTab);
+            }
+        }
+    }, [urlTab, id, navigate]);
+
+    const project = useMemo(() => {
+        return (
+            projects.find((p) => p.id === id) ||
+            (currentProject?.id === id ? currentProject : null) ||
+            (() => {
+                try {
+                    return JSON.parse(localStorage.getItem(`project_${id}`));
+                } catch (_) {
+                    return null;
+                }
+            })()
+        );
+    }, [projects, currentProject, id]);
 
     useEffect(() => {
         if (projects.length === 0) {
@@ -29,11 +58,13 @@ const ProjectWorkspace = () => {
         }
     }, [projects.length, fetchProjects]);
 
+    const loadedProjectIdRef = useRef(null);
     useEffect(() => {
-        if (project) {
+        if (project && loadedProjectIdRef.current !== project.id) {
+            loadedProjectIdRef.current = project.id;
             loadProjectSettings(project);
         }
-    }, [project, loadProjectSettings]);
+    }, [project?.id]);
 
     useEffect(() => {
         if (activeTab === 'interior') {
@@ -64,11 +95,12 @@ const ProjectWorkspace = () => {
             navigate(`/projects/${id}/exterior`);
         } else {
             setActiveTab(tabId);
+            setSearchParams({ tab: tabId }, { replace: true });
         }
     };
 
     return (
-        <div style={{ maxWidth: 'var(--container-max-width)', margin: '0 auto', display: 'flex', flexDirection: 'column', height: 'calc(100vh - 140px)' }}>
+        <div style={{ maxWidth: 'var(--container-max-width)', margin: '0 auto', display: 'flex', flexDirection: 'column', minHeight: 'calc(100vh - 140px)' }}>
             <Link to="/projects" className="btn btn-ghost btn-sm" style={{ marginBottom: 'var(--space-4)', display: 'inline-flex', padding: 0, width: 'fit-content' }}>
                 <ArrowLeft size={16} style={{ marginRight: '4px' }} /> Back to Projects
             </Link>
@@ -125,13 +157,22 @@ const ProjectWorkspace = () => {
             </div>
 
             {/* TAB CONTENTS */}
-            <div className="workspace-content" style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-                {activeTab === 'overview' && <OverviewTab project={project} planner={planner} />}
+            <div className="workspace-content" style={{ flex: 1, display: 'flex', flexDirection: 'column', width: '100%' }}>
+                {activeTab === 'overview' && <OverviewTab project={project} planner={planner} setActiveTab={handleTabClick} navigate={navigate} />}
                 {activeTab === 'floorplans' && <FloorPlansTab project={project} planner={planner} navigate={navigate} />}
                 {activeTab === 'interior' && <InteriorTab project={project} planner={planner} navigate={navigate} />}
                 {activeTab === 'exterior' && <ExteriorTab project={project} planner={planner} navigate={navigate} />}
-                {activeTab === '3d' && <ThreeDTab project={project} />}
-                {activeTab === 'estimate' && <EstimateTab project={project} />}
+                {activeTab === '3d' && (
+                    <React.Suspense fallback={
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '450px', gap: '16px', color: 'var(--color-text-muted)' }}>
+                            <div className="unified-loading-spinner" style={{ width: '36px', height: '36px', border: '3px solid rgba(56, 189, 248, 0.2)', borderTopColor: '#38bdf8', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+                            <span>Loading Unified 3D House Visualization...</span>
+                        </div>
+                    }>
+                        <ThreeDTab project={project} setActiveTab={handleTabClick} navigate={navigate} />
+                    </React.Suspense>
+                )}
+                {activeTab === 'estimate' && <EstimateTab project={project} setActiveTab={handleTabClick} navigate={navigate} />}
             </div>
         </div>
     );

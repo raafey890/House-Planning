@@ -36,29 +36,61 @@ export const costEstimationService = {
         if (!response.ok) {
             throw new Error(data.detail || data.message || "Failed to generate cost estimate");
         }
+        try {
+            localStorage.setItem(`cost_estimate_${projectId}`, JSON.stringify(data));
+        } catch (e) {}
         return data;
     },
 
     /**
-     * Fetches the latest saved estimate for the project.
+     * Fetches the latest saved estimate for the project with resilient local cache fallback.
      */
     async getLatestEstimate(projectId) {
+        let cachedData = null;
+        try {
+            const cached = localStorage.getItem(`cost_estimate_${projectId}`);
+            if (cached) {
+                cachedData = JSON.parse(cached);
+            }
+        } catch (e) {
+            console.warn('[costEstimationService] Error reading cached estimate:', e);
+        }
+
         const token = useAuthStore.getState().session?.access_token;
         if (!token) {
+            if (cachedData) return cachedData;
             throw new Error("Authentication required");
         }
 
-        const response = await fetch(`${API_BASE_URL}/projects/${projectId}/cost-estimate`, {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        });
+        try {
+            const response = await fetch(`${API_BASE_URL}/projects/${projectId}/cost-estimate`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
 
-        const data = await response.json();
-        if (!response.ok) {
+            if (response.ok) {
+                const data = await response.json();
+                try {
+                    localStorage.setItem(`cost_estimate_${projectId}`, JSON.stringify(data));
+                } catch (e) {}
+                return data;
+            }
+
+            if (cachedData) {
+                console.warn(`[costEstimationService] Server returned ${response.status}, using cached estimate`);
+                return cachedData;
+            }
+
+            const data = await response.json().catch(() => ({}));
             throw new Error(data.detail || data.message || "Failed to fetch cost estimate");
+        } catch (err) {
+            if (cachedData) {
+                console.warn('[costEstimationService] Network error, using cached estimate:', err);
+                return cachedData;
+            }
+            throw err;
         }
-        return data;
     },
 
     /**
@@ -89,6 +121,9 @@ export const costEstimationService = {
         if (!response.ok) {
             throw new Error(data.detail || data.message || "Failed to recalculate cost estimate");
         }
+        try {
+            localStorage.setItem(`cost_estimate_${projectId}`, JSON.stringify(data));
+        } catch (e) {}
         return data;
     },
 

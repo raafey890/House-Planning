@@ -2575,8 +2575,19 @@
   align-items: center;
   flex-wrap: wrap;
   gap: 1rem;
-  padding-top: 1rem;
+  padding-top: 1.25rem;
+  margin-top: 1rem;
   border-top: 1px solid #1f2937;
+}
+
+.summary-actions-bar .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0.6rem 1.25rem;
+  font-size: 0.88rem;
+  font-weight: 600;
+  border-radius: 8px;
 }
 
 /* ==========================================================================
@@ -2891,5 +2902,677 @@
   font-weight: 700;
   color: #f1f5f9;
 }
+
+/* ==========================================================================
+   Phase 6G.3: Responsive Viewer Toolbar & Live 2-Column Customizer Styles
+   ========================================================================== */
+
+.exterior-3d-viewer-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  container-type: inline-size;
+  container-name: viewer;
+}
+
+/* ── 3D Viewer Top Bar (Non-Overlapping Flex Layout) ─────────────────────── */
+.viewer-top-bar-v3 {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  right: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  z-index: 25;
+  pointer-events: none;
+}
+
+.viewer-presets-pill-group,
+.viewer-actions-pill-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+  pointer-events: auto;
+  background: rgba(15, 23, 42, 0.88);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  padding: 4px 8px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+}
+
+.viewer-group-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #64748b;
+  margin-right: 4px;
+  letter-spacing: 0.05em;
+}
+
+.btn-viewer-preset,
+.btn-viewer-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: #cbd5e1;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.btn-viewer-preset:hover,
+.btn-viewer-action:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+}
+
+.btn-viewer-preset.active {
+  background: #0284c7;
+  color: #ffffff;
+  box-shadow: 0 2px 6px rgba(2, 132, 199, 0.4);
+}
+
+.btn-viewer-action.active {
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.btn-viewer-action.night-active {
+  background: #1e293b;
+  color: #fde047;
+  border: 1px solid rgba(253, 224, 71, 0.3);
+}
+
+/* ── Viewer Bottom Bar (Non-Overlapping Responsive Flex Layout) ───────────── */
+.viewer-bottom-bar-v3 {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  right: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  z-index: 20;
+  pointer-events: none;
+}
+
+.viewer-bottom-left-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(15, 23, 42, 0.88);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  padding: 6px 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+  font-size: 0.72rem;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  pointer-events: auto;
+  white-space: nowrap;
+}
+
+.viewer-bottom-right-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(15, 23, 42, 0.82);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.68rem;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  pointer-events: auto;
+  white-space: nowrap;
+}
+
+.ground-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 6px #10b981;
+}
+
+.ground-tag-full {
+  display: inline;
+}
+
+.ground-tag-short {
+  display: none;
+}
+
+.hint-full {
+  display: inline;
+}
+
+.hint-short {
+  display: none;
+}
+
+.badge-sep {
+  opacity: 0.45;
+  color: #94a3b8;
+}
+
+/* Adaptive stacking when the 3D viewer card width is under 740px */
+@container viewer (max-width: 740px) {
+  .viewer-bottom-bar-v3 {
+    flex-direction: column-reverse;
+    align-items: flex-start;
+    gap: 6px;
+    bottom: 8px;
+    left: 8px;
+    right: 8px;
+  }
+  .viewer-bottom-left-badge {
+    font-size: 0.68rem;
+    padding: 5px 10px;
+    gap: 6px;
+  }
+  .viewer-bottom-right-badge {
+    font-size: 0.64rem;
+    padding: 4px 8px;
+  }
+  .ground-tag-full {
+    display: none;
+  }
+  .ground-tag-short {
+    display: inline;
+  }
+  .hint-full {
+    display: none;
+  }
+  .hint-short {
+    display: inline;
+  }
+}
+
+/* Fallback media query when screen width is under 1300px */
+@media (max-width: 1300px) {
+  .viewer-bottom-bar-v3 {
+    flex-direction: column-reverse;
+    align-items: flex-start;
+    gap: 6px;
+  }
+  .viewer-bottom-left-badge {
+    font-size: 0.68rem;
+    padding: 5px 10px;
+    gap: 6px;
+  }
+  .viewer-bottom-right-badge {
+    font-size: 0.64rem;
+    padding: 4px 8px;
+  }
+  .ground-tag-full {
+    display: none;
+  }
+  .ground-tag-short {
+    display: inline;
+  }
+  .hint-full {
+    display: none;
+  }
+  .hint-short {
+    display: inline;
+  }
+}
+
+/* ── Stage 2 Customizer Workspace (Left Controls + Right Live 3D Preview) ── */
+.stage2-customizer-workspace {
+  display: grid;
+  grid-template-columns: minmax(420px, 480px) 1fr;
+  gap: 1.5rem;
+  width: 100%;
+  max-width: 1650px;
+  margin: 0 auto;
+  align-items: start;
+}
+
+@media (max-width: 1180px) {
+  .stage2-customizer-workspace {
+    grid-template-columns: 1fr;
+  }
+}
+
+.stage2-controls-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.stage2-preview-panel {
+  position: sticky;
+  top: 80px;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+@media (max-width: 1180px) {
+  .stage2-preview-panel {
+    position: static;
+  }
+}
+
+.stage2-preview-sticky-card {
+  background: #111827;
+  border: 1px solid #1f2937;
+  border-radius: 14px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+}
+
+.stage2-viewer-header-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0.75rem 1.25rem;
+  background: #0f172a;
+  border-bottom: 1px solid #1e293b;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #38bdf8;
+  letter-spacing: 0.04em;
+}
+
+.live-badge-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 8px #10b981;
+}
+
+.stage2-viewer-canvas-box {
+  height: 520px;
+  width: 100%;
+  position: relative;
+  background: #0a0f1d;
+}
+
+.stage2-preview-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.9rem 1.25rem;
+  background: #0f172a;
+  border-top: 1px solid #1e293b;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.stage2-ref-mini-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.stage2-ref-thumb {
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 1px solid #334155;
+}
+
+.ref-mini-title {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.ref-mini-sub {
+  display: block;
+  font-size: 0.72rem;
+  color: #94a3b8;
+}
+
+.stage2-footer-nav-btns {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ==========================================================================
+   PHASE 6G.5 — EXTERIOR ARCHITECTURAL BLUEPRINT & VISUALIZATION WORKSPACE
+   ========================================================================== */
+
+/* ── Visualization Switcher Segmented Tabs ────────────────────────────────── */
+.exterior-view-switcher-tabs {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #0d1527;
+  border-bottom: 1px solid #1e293b;
+  padding: 0.5rem 1rem;
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+  flex-wrap: wrap;
+}
+
+.exterior-view-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0.55rem 1rem;
+  background: transparent;
+  border: 1px solid transparent;
+  border-bottom: 2px solid transparent;
+  color: #94a3b8;
+  font-size: 0.82rem;
+  font-weight: 600;
+  border-radius: 6px 6px 0 0;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.exterior-view-tab-btn:hover {
+  color: #f8fafc;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.exterior-view-tab-btn.is-active {
+  color: #38bdf8;
+  border-bottom-color: #38bdf8;
+  background: rgba(56, 189, 248, 0.09);
+  border-top: 1px solid rgba(56, 189, 248, 0.2);
+  border-left: 1px solid rgba(56, 189, 248, 0.2);
+  border-right: 1px solid rgba(56, 189, 248, 0.2);
+}
+
+/* ── Blueprint Viewer Root & Layout ───────────────────────────────────────── */
+.exterior-blueprint-viewer-root {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  background: #0a101f;
+  border: 1px solid #1e293b;
+  border-radius: 0 0 12px 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* ── Blueprint Toolbar ────────────────────────────────────────────────────── */
+.elevation-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.65rem 1rem;
+  background: #0f172a;
+  border-bottom: 1px solid #1e293b;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.elevation-toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.elevation-segmented-pills {
+  display: inline-flex;
+  background: #141e33;
+  padding: 3px;
+  border-radius: 6px;
+  border: 1px solid #1e293b;
+}
+
+.elevation-pill-btn {
+  padding: 4px 10px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  border: none;
+  background: transparent;
+  color: #94a3b8;
+  border-radius: 4px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  transition: all 0.15s ease;
+}
+
+.elevation-pill-btn:hover {
+  color: #f8fafc;
+}
+
+.elevation-pill-btn.is-active {
+  background: #0284c7;
+  color: #ffffff;
+  box-shadow: 0 1px 4px rgba(2, 132, 199, 0.4);
+}
+
+.elevation-zoom-controls {
+  display: inline-flex;
+  align-items: center;
+  background: #141e33;
+  border: 1px solid #1e293b;
+  border-radius: 6px;
+  padding: 2px 6px;
+  gap: 4px;
+}
+
+.elevation-tool-btn {
+  background: transparent;
+  border: none;
+  color: #cbd5e1;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s ease;
+}
+
+.elevation-tool-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+.elevation-zoom-tag {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #38bdf8;
+  min-width: 36px;
+  text-align: center;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.elevation-export-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.elevation-action-btn {
+  background: #1e293b;
+  border: 1px solid #334155;
+  color: #f8fafc;
+  font-size: 0.74rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.15s ease;
+}
+
+.elevation-action-btn:hover {
+  background: #334155;
+  border-color: #38bdf8;
+  color: #38bdf8;
+}
+
+/* ── Blueprint Canvas Container ──────────────────────────────────────────── */
+.elevation-canvas-container {
+  position: relative;
+  width: 100%;
+  background: #0a192f;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+}
+
+.elevation-svg-stage {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.elevation-svg-stage svg {
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  display: block;
+}
+
+.elevation-viewport-watermark {
+  position: absolute;
+  bottom: 10px;
+  right: 12px;
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(4px);
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 0.68rem;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  pointer-events: none;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* ── Blueprint Information Footer ────────────────────────────────────────── */
+.elevation-info-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  padding: 0.85rem 1.25rem;
+  background: #090d16;
+  border-top: 1px solid #1e293b;
+}
+
+.elevation-footer-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.elevation-meta-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.74rem;
+  background: #141e33;
+  padding: 3px 8px;
+  border-radius: 4px;
+  border: 1px solid #1e293b;
+}
+
+.meta-chip-label {
+  color: #94a3b8;
+  font-weight: 700;
+  font-size: 0.68rem;
+}
+
+.meta-chip-val {
+  color: #f8fafc;
+  font-weight: 600;
+}
+
+.elevation-footer-disclaimer {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 0.75rem;
+  color: #94a3b8;
+  line-height: 1.45;
+  background: rgba(30, 41, 59, 0.4);
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid #1e293b;
+}
+
+/* ── Reference Image Mode Display in Workspace ───────────────────────────── */
+.workspace-reference-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.25rem;
+  background: #0a101f;
+  border: 1px solid #1e293b;
+  border-radius: 0 0 12px 12px;
+}
+
+.workspace-reference-photo-box {
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  max-height: 520px;
+  border-radius: 8px;
+  overflow: hidden;
+  position: relative;
+  background: #0f172a;
+  border: 1px solid #334155;
+}
+
+.workspace-reference-photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.workspace-reference-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/* ── Responsive Adaptations for Workspace ────────────────────────────────── */
+@media (max-width: 900px) {
+  .elevation-toolbar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .exterior-view-switcher-tabs {
+    overflow-x: auto;
+  }
+}
+
+
 
 

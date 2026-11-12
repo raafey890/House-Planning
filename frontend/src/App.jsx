@@ -1,6 +1,7 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { useAuthStore } from "./store";
+import BrandIntro from "./components/BrandIntro/BrandIntro.jsx";
 
 import HomePage from "./pages/Home/HomePage.jsx";
 import PlannerPage from "./pages/planner/PlannerPage.jsx";
@@ -29,86 +30,94 @@ import ErrorBoundary from "./components/ErrorBoundary.jsx";
 
 function App() {
   const initializeAuth = useAuthStore((state) => state.initializeAuth);
+  const [showIntro, setShowIntro] = useState(true);
 
   useEffect(() => {
     initializeAuth();
   }, [initializeAuth]);
 
+  useEffect(() => {
+    document.title = "ROY DESIGNS – AI House Planning & Visualization System";
+  }, []);
+
   return (
-    <BrowserRouter>
-      <Routes>
-        {/* Public Routes */}
-        <Route path="/" element={<HomePage />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/signup" element={<SignupPage />} />
-        <Route path="/gallery" element={<GalleryPage />} />
-        <Route path="/marketplace" element={<MarketplacePage />} />
-        <Route path="/premium" element={<PremiumPage />} />
-        <Route path="/support" element={<SupportPage />} />
+    <>
+      {showIntro && <BrandIntro onFinish={() => setShowIntro(false)} />}
+      <BrowserRouter>
+        <Routes>
+          {/* Public Routes */}
+          <Route path="/" element={<HomePage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/signup" element={<SignupPage />} />
+          <Route path="/gallery" element={<GalleryPage />} />
+          <Route path="/marketplace" element={<MarketplacePage />} />
+          <Route path="/premium" element={<PremiumPage />} />
+          <Route path="/support" element={<SupportPage />} />
 
-        {/* Authenticated Application Layout */}
-        <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
-          <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="/projects" element={<ProjectsPage />} />
-          <Route path="/projects/:id" element={<ProjectWorkspace />} />
-          <Route path="/projects/:id/planner" element={<PlannerPage />} />
-          
-          {/* Legacy / un-nested routes for now */}
-          <Route path="/planner" element={<PlannerPage />} />
-          <Route path="/floorplan" element={<FloorPlanPage />} />
-          <Route path="/estimator" element={<EstimatorPage />} />
-          <Route path="/ai-studio" element={<AIStudioPage />} />
-          <Route path="/settings" element={<SettingsPage />} />
-          <Route path="/profile" element={<ProfilePage />} />
-        </Route>
+          {/* Authenticated Application Layout */}
+          <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
+            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/projects" element={<ProjectsPage />} />
+            <Route path="/projects/:id" element={<ProjectWorkspace />} />
+            <Route path="/projects/:id/planner" element={<PlannerPage />} />
+            
+            {/* Legacy / un-nested routes for now */}
+            <Route path="/planner" element={<PlannerPage />} />
+            <Route path="/floorplan" element={<FloorPlanPage />} />
+            <Route path="/estimator" element={<EstimatorPage />} />
+            <Route path="/ai-studio" element={<AIStudioPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
+          </Route>
 
-        {/* Dedicated Full-Page Interior Design Studio (no AppLayout sidebar/topbar) */}
-        <Route
-          path="/projects/:id/interior"
-          element={
-            <ProtectedRoute>
-              <ErrorBoundary title="Interior Design Studio">
-                <InteriorStudioPage />
-              </ErrorBoundary>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/projects/:projectId/interior"
-          element={
-            <ProtectedRoute>
-              <ErrorBoundary title="Interior Design Studio">
-                <InteriorStudioPage />
-              </ErrorBoundary>
-            </ProtectedRoute>
-          }
-        />
+          {/* Dedicated Full-Page Interior Design Studio (no AppLayout sidebar/topbar) */}
+          <Route
+            path="/projects/:id/interior"
+            element={
+              <ProtectedRoute>
+                <ErrorBoundary title="Interior Design Studio">
+                  <InteriorStudioPage />
+                </ErrorBoundary>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/projects/:projectId/interior"
+            element={
+              <ProtectedRoute>
+                <ErrorBoundary title="Interior Design Studio">
+                  <InteriorStudioPage />
+                </ErrorBoundary>
+              </ProtectedRoute>
+            }
+          />
 
-        {/* Dedicated Full-Page Exterior Design Studio (no AppLayout sidebar/topbar) */}
-        <Route
-          path="/projects/:id/exterior"
-          element={
-            <ProtectedRoute>
-              <ErrorBoundary title="Exterior Design Studio">
-                <ExteriorStudioPage />
-              </ErrorBoundary>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/projects/:projectId/exterior"
-          element={
-            <ProtectedRoute>
-              <ErrorBoundary title="Exterior Design Studio">
-                <ExteriorStudioPage />
-              </ErrorBoundary>
-            </ProtectedRoute>
-          }
-        />
+          {/* Dedicated Full-Page Exterior Design Studio (no AppLayout sidebar/topbar) */}
+          <Route
+            path="/projects/:id/exterior"
+            element={
+              <ProtectedRoute>
+                <ErrorBoundary title="Exterior Design Studio">
+                  <ExteriorStudioPage />
+                </ErrorBoundary>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/projects/:projectId/exterior"
+            element={
+              <ProtectedRoute>
+                <ErrorBoundary title="Exterior Design Studio">
+                  <ExteriorStudioPage />
+                </ErrorBoundary>
+              </ProtectedRoute>
+            }
+          />
 
-        <Route path="*" element={<NotFoundPage />} />
-      </Routes>
-    </BrowserRouter>
+          <Route path="*" element={<NotFoundPage />} />
+        </Routes>
+      </BrowserRouter>
+    </>
   );
 }
 

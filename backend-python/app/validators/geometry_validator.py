@@ -82,6 +82,16 @@ class GeometryValidator:
         has_foyer = False
         all_stair_positions: Dict[int, List[Tuple[float, float]]] = {}  # level -> [(x, y), ...]
 
+        # ── 1b. Floor sequence validation ────────────────────────
+        if not layout.floors:
+            errors.append("Layout must have at least one floor.")
+        else:
+            floor_levels = [f.level for f in layout.floors]
+            if len(floor_levels) != len(set(floor_levels)):
+                errors.append("Duplicate floor levels found in layout.")
+            if sorted(floor_levels) != list(range(len(floor_levels))):
+                errors.append(f"Floor levels must be contiguous starting from 0, got {sorted(floor_levels)}.")
+
         for floor in layout.floors:
             room_boxes = []
             floor_room_counts = {}
@@ -177,6 +187,25 @@ class GeometryValidator:
                 if unified_shape.geom_type == 'MultiPolygon':
                     errors.append(f"Floor {floor.level} is disconnected. All rooms must form a contiguous structure.")
 
+            # Validate doors and windows geometry
+            for door in getattr(floor, "doors", []):
+                dw = getattr(door, "width", 0)
+                if dw <= 0:
+                    errors.append(f"Door '{door.id}' has non-positive width {dw}.")
+                pos = getattr(door, "position", None)
+                if pos is not None:
+                    if pos.x < 0 or pos.x > layout.plot.width or pos.y < 0 or pos.y > layout.plot.length:
+                        errors.append(f"Door '{door.id}' position ({pos.x}, {pos.y}) is outside plot boundary.")
+
+            for win in getattr(floor, "windows", []):
+                ww = getattr(win, "width", 0)
+                if ww <= 0:
+                    errors.append(f"Window '{win.id}' has non-positive width {ww}.")
+                pos = getattr(win, "position", None)
+                if pos is not None:
+                    if pos.x < 0 or pos.x > layout.plot.width or pos.y < 0 or pos.y > layout.plot.length:
+                        errors.append(f"Window '{win.id}' position ({pos.x}, {pos.y}) is outside plot boundary.")
+
             # Check for main entrance door on ground floor
             if floor.level == 0:
                 for door in floor.doors:
@@ -213,7 +242,12 @@ class GeometryValidator:
                     has_parking = True
         results["parking_connection"] = has_parking and has_vehicle_gate if has_parking else True
 
-        # ── Stair alignment across floors ───────────────────────
+        # ── Multi-floor stair completeness & vertical alignment ─
+        if len(layout.floors) > 1:
+            for f in layout.floors:
+                if f.level not in all_stair_positions or len(all_stair_positions[f.level]) == 0:
+                    errors.append(f"Floor {f.level} is missing a staircase connection. Multi-floor plans require stairs on each level.")
+
         stair_aligned = True
         levels = sorted(all_stair_positions.keys())
         if len(levels) >= 2:

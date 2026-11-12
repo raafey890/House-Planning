@@ -54,10 +54,14 @@ export const aiService = {
         const data = await response.json();
 
         if (!response.ok) {
-            // Backend returned a structured error (Phase 6C.3 format)
+            // Backend returned a structured error (Phase 6C.3 / 6M.1 format)
             if (data.code) {
+                const errorMsg = data.message || "Floor plan generation couldn't complete right now.";
+                const suggestionsText = data.suggestions && data.suggestions.length > 0
+                    ? ` Suggestions: ${data.suggestions.join(", ")}`
+                    : "";
                 throw new GenerationError(
-                    data.message || "Floor plan generation couldn't complete right now.",
+                    `${errorMsg}${suggestionsText}`,
                     {
                         code: data.code,
                         retryable: data.retryable ?? true,
@@ -65,10 +69,19 @@ export const aiService = {
                     }
                 );
             }
-            // Legacy error format fallback
+            // Detail format fallback (including FastAPI Pydantic 422 errors)
+            let detailMsg = "Generation couldn't complete right now. Please retry.";
+            if (typeof data.detail === 'string') {
+                detailMsg = data.detail;
+            } else if (Array.isArray(data.detail)) {
+                detailMsg = data.detail.map(d => d.msg || JSON.stringify(d)).join("; ");
+            } else if (data.detail && typeof data.detail === 'object') {
+                detailMsg = JSON.stringify(data.detail);
+            }
+
             throw new GenerationError(
-                data.detail || "Generation couldn't complete right now. Please retry.",
-                { code: 'LEGACY_ERROR', retryable: true }
+                detailMsg,
+                { code: 'VALIDATION_ERROR', retryable: false }
             );
         }
 

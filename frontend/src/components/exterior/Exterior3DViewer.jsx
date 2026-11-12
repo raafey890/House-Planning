@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import {
@@ -7,24 +7,20 @@ import {
   Camera,
   RotateCw,
   RotateCcw,
-  Download,
-  Eye,
-  Maximize2,
-  Sliders,
-  Layers
+  Sparkles
 } from 'lucide-react';
 
 /**
- * Exterior3DViewer — Phase 6G
+ * Exterior3DViewer — Phase 6G.3
  *
- * Dimension-grounded interactive 3D WebGL house massing model.
- * Adapts to:
- * - Real plot width, plot length, and floor count (G, G+1, G+2)
- * - Selected design architectural language (Modern, Minimalist, Luxury, Traditional, etc.)
- * - Dynamic custom colors: primary_wall, accent_wall, door, railing
- * - Real-time Day / Night lighting with 2700K window interior emission & exterior sconces
- * - Camera angle presets (Front, 3/4 Left, 3/4 Right, Bird's Eye)
- * - Auto-rotation turntable & high-res PNG snapshot export
+ * Professional Dimension-Grounded Architectural 3D House Model.
+ * Features:
+ * - High-speed material color updates (in-place GPU buffer updates, zero geometry thrashing)
+ * - Balanced architectural lighting: Hemisphere skylight + directional sunlight + soft fill
+ * - Zero self-shadow acne (tuned normalBias and shadow bias)
+ * - Luminous night atmosphere with 2700K glowing interior windows and warm facade accents
+ * - Responsive non-overlapping top toolbar with Camera presets, Day/Night, Turntable, Reset & Snapshot
+ * - Accurate representation across all 12 customizable components
  */
 const Exterior3DViewer = ({
   project,
@@ -43,63 +39,22 @@ const Exterior3DViewer = ({
   const animFrameRef = useRef(null);
   const houseGroupRef = useRef(null);
   const lightsRef = useRef({});
+  const materialsRef = useRef({});
 
   const [isNight, setIsNight] = useState(lightingMode === 'night');
   const [isRotating, setIsRotating] = useState(false);
   const [activePreset, setActivePreset] = useState('front_left');
 
-  // Sync internal state with prop
+  // Sync internal night state with prop
   useEffect(() => {
     setIsNight(lightingMode === 'night');
   }, [lightingMode]);
 
-  // Dimensions
+  // Project dimensions
   const plotW = Number(project?.plot_width) || 30;
   const plotL = Number(project?.plot_length) || 40;
   const floors = Number(project?.floors) || 2;
   const facing = project?.facing || 'North';
-
-  // Extract All 12 Customizable Component Colors
-  const primaryColorHex =
-    customColors?.primary_wall ||
-    selectedDesign?.primary_paint_color?.hex ||
-    '#F4F4F0';
-  const secondaryColorHex =
-    customColors?.secondary_wall ||
-    '#E5E7EB';
-  const accentColorHex =
-    customColors?.accent_wall ||
-    selectedDesign?.secondary_paint_color?.hex ||
-    '#2B313B';
-  const frontFacadeColorHex =
-    customColors?.front_facade ||
-    primaryColorHex;
-  const boundaryWallColorHex =
-    customColors?.boundary_wall ||
-    '#E5E0D6';
-  const boundaryGateColorHex =
-    customColors?.boundary_gate ||
-    '#30343B';
-  const doorColorHex =
-    customColors?.door ||
-    '#8B5A2B';
-  const windowFrameColorHex =
-    customColors?.window_frame ||
-    '#20252B';
-  const windowGlassColorHex =
-    customColors?.window_glass_tint ||
-    '#7DD3FC';
-  const railingColorHex =
-    customColors?.railing ||
-    '#1F2937';
-  const roofParapetColorHex =
-    customColors?.roof_parapet ||
-    accentColorHex;
-  const exteriorTrimsColorHex =
-    customColors?.exterior_trims ||
-    '#20252B';
-
-  const finishType = customMaterials?.finish_type || 'matte_paint';
 
   // Architectural category
   const category = selectedDesign?.category || 'modern_contemporary';
@@ -107,10 +62,18 @@ const Exterior3DViewer = ({
     category === 'traditional_indian' || category === 'mediterranean';
   const isMinimal = category === 'minimalist';
   const isLuxury = category === 'luxury_villa';
-  const isTropical = category === 'tropical_contemporary';
   const isIndianModern = category === 'indian_modern';
 
-  // Initialize Three.js Scene
+  // Helper to validate and clean hex
+  const safeHex = (hex, fallback) => {
+    if (!hex || typeof hex !== 'string') return fallback;
+    const clean = hex.trim();
+    return /^[0-9A-Fa-f]{3}$|^[0-9A-Fa-f]{6}$|^#[0-9A-Fa-f]{3}$|^#[0-9A-Fa-f]{6}$/.test(clean)
+      ? (clean.startsWith('#') ? clean : `#${clean}`)
+      : fallback;
+  };
+
+  // ── 1. Initialize Three.js Scene, Camera, Renderer, Controls & Lighting ──
   useEffect(() => {
     const container = mountRef.current;
     if (!container) return;
@@ -120,24 +83,28 @@ const Exterior3DViewer = ({
 
     // 1. Scene
     const scene = new THREE.Scene();
+    scene.background = new THREE.Color(isNight ? 0x0a0f1d : 0xe6f0fa);
     sceneRef.current = scene;
 
     // 2. Camera
-    const camera = new THREE.PerspectiveCamera(42, width / height, 0.1, 1000);
+    const camera = new THREE.PerspectiveCamera(40, width / height, 0.1, 1000);
     cameraRef.current = camera;
 
-    // 3. Renderer
+    // 3. Renderer with high dynamic range tone mapping & sRGB output
     const renderer = new THREE.WebGLRenderer({
       antialias: true,
-      alpha: true,
-      preserveDrawingBuffer: true
+      alpha: false,
+      preserveDrawingBuffer: true,
+      powerPreference: 'high-performance'
     });
     renderer.setSize(width, height);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.3;
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.0;
+
     container.innerHTML = '';
     container.appendChild(renderer.domElement);
     rendererRef.current = renderer;
@@ -147,47 +114,57 @@ const Exterior3DViewer = ({
     controls.enableDamping = true;
     controls.dampingFactor = 0.08;
     controls.minDistance = 6;
-    controls.maxDistance = 65;
-    controls.maxPolarAngle = Math.PI / 2 - 0.03; // Don't clip under ground
+    controls.maxDistance = 75;
+    controls.maxPolarAngle = Math.PI / 2 - 0.02; // Prevent clipping under site plinth
     controlsRef.current = controls;
 
-    // 5. Lighting Setup
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
-    scene.add(ambientLight);
+    // 5. Balanced Architectural Lighting System (Natural Sunlight + Skylight Bounce)
+    // 5a. Ambient & Hemisphere Light (Skylight + Ground bounce)
+    const hemiLight = new THREE.HemisphereLight(0xffffff, 0x64748b, 1.4);
+    hemiLight.position.set(0, 50, 0);
+    scene.add(hemiLight);
 
-    const dirLight = new THREE.DirectionalLight(0xfff8eb, 1.8);
+    // 5b. Primary Directional Sunlight
+    const dirLight = new THREE.DirectionalLight(0xfffaed, 2.2);
     dirLight.castShadow = true;
     dirLight.shadow.mapSize.width = 2048;
     dirLight.shadow.mapSize.height = 2048;
     dirLight.shadow.camera.near = 0.5;
-    dirLight.shadow.camera.far = 100;
-    dirLight.shadow.camera.left = -20;
-    dirLight.shadow.camera.right = 20;
-    dirLight.shadow.camera.top = 20;
-    dirLight.shadow.camera.bottom = -20;
-    dirLight.shadow.bias = -0.0005;
-    dirLight.position.set(16, 26, 18);
+    dirLight.shadow.camera.far = 120;
+    dirLight.shadow.camera.left = -22;
+    dirLight.shadow.camera.right = 22;
+    dirLight.shadow.camera.top = 22;
+    dirLight.shadow.camera.bottom = -22;
+    // Eliminates self-shadow acne on walls:
+    dirLight.shadow.bias = -0.00005;
+    dirLight.shadow.normalBias = 0.04;
+    dirLight.position.set(20, 30, 22);
     scene.add(dirLight);
 
-    // Warm sconce light at entrance
-    const porchLight = new THREE.PointLight(0xffdf80, 0, 10);
+    // 5c. Secondary Fill Light (Soft counter-angle sky reflection)
+    const fillLight = new THREE.DirectionalLight(0xdbeafe, 0.9);
+    fillLight.position.set(-22, 18, -16);
+    scene.add(fillLight);
+
+    // 5d. Warm Entrance Porch Sconce (Night illumination)
+    const porchLight = new THREE.PointLight(0xffd166, isNight ? 3.5 : 0, 12);
     porchLight.position.set(0, 3.2, 5.5);
     porchLight.castShadow = true;
     scene.add(porchLight);
 
-    // Facade graze spot
-    const facadeSpot = new THREE.SpotLight(0xffaa44, 0, 14, Math.PI / 5, 0.4, 1.2);
-    facadeSpot.position.set(-3.5, 0.2, 5.5);
+    // 5e. Facade Grazer Spotlight (Night illumination)
+    const facadeSpot = new THREE.SpotLight(0xffb703, isNight ? 4.0 : 0, 16, Math.PI / 4, 0.4, 1.2);
+    facadeSpot.position.set(-3.5, 0.3, 5.5);
     facadeSpot.target.position.set(-3.5, 6, 4);
     scene.add(facadeSpot);
     scene.add(facadeSpot.target);
 
-    lightsRef.current = { ambientLight, dirLight, porchLight, facadeSpot };
+    lightsRef.current = { hemiLight, dirLight, fillLight, porchLight, facadeSpot };
 
-    // 6. Base / Site Ground
-    const groundGeo = new THREE.PlaneGeometry(60, 60);
+    // 6. Site Ground & Landscaping Plinth
+    const groundGeo = new THREE.PlaneGeometry(70, 70);
     const groundMat = new THREE.MeshStandardMaterial({
-      color: 0x223326,
+      color: 0x1f2937,
       roughness: 0.9,
       metalness: 0.05
     });
@@ -203,7 +180,7 @@ const Exterior3DViewer = ({
 
     const plinthGeo = new THREE.BoxGeometry(siteW + 1.2, 0.3, siteL + 1.2);
     const plinthMat = new THREE.MeshStandardMaterial({
-      color: 0x475569,
+      color: 0x334155,
       roughness: 0.85
     });
     const plinth = new THREE.Mesh(plinthGeo, plinthMat);
@@ -211,10 +188,10 @@ const Exterior3DViewer = ({
     plinth.receiveShadow = true;
     scene.add(plinth);
 
-    // Stone Walkway / Driveway
+    // Paved Stone Walkway / Driveway
     const driveGeo = new THREE.BoxGeometry(siteW * 0.42, 0.02, siteL * 0.48);
     const driveMat = new THREE.MeshStandardMaterial({
-      color: 0x334155,
+      color: 0x475569,
       roughness: 0.7
     });
     const drive = new THREE.Mesh(driveGeo, driveMat);
@@ -222,13 +199,13 @@ const Exterior3DViewer = ({
     drive.receiveShadow = true;
     scene.add(drive);
 
-    // Set Initial Camera Position (Isometric 3/4 front-left)
-    const houseCenterY = (floors * 3.0) / 2;
+    // Set Initial Camera Position (3/4 front-left perspective)
+    const houseCenterY = (floors * 2.85) / 2;
     camera.position.set(-16, houseCenterY + 7, 19);
     controls.target.set(0, houseCenterY, 0);
     controls.update();
 
-    // Resize Handler
+    // Resize Observer / Window Resize Handler
     const handleResize = () => {
       if (!container || !renderer || !camera) return;
       const w = container.clientWidth;
@@ -257,61 +234,73 @@ const Exterior3DViewer = ({
     };
   }, []);
 
-  // Update Environment / Day-Night Lighting
+  // ── 2. Update Lighting Between Daylight and Night Mode ───────────────────
   useEffect(() => {
     const scene = sceneRef.current;
-    const { ambientLight, dirLight, porchLight, facadeSpot } = lightsRef.current;
-    if (!scene || !ambientLight || !dirLight) return;
+    const { hemiLight, dirLight, fillLight, porchLight, facadeSpot } = lightsRef.current;
+    if (!scene || !dirLight) return;
 
     if (isNight) {
-      // Twilight Night
+      // Twilight Night Scene
       scene.background = new THREE.Color(0x0a0f1d);
-      ambientLight.color.setHex(0x1e293b);
-      ambientLight.intensity = 0.4;
+      if (hemiLight) {
+        hemiLight.color.setHex(0x38bdf8);
+        hemiLight.groundColor.setHex(0x0f172a);
+        hemiLight.intensity = 0.75;
+      }
+      dirLight.color.setHex(0x93c5fd);
+      dirLight.intensity = 0.85;
+      dirLight.position.set(-16, 24, 16);
 
-      dirLight.color.setHex(0x38bdf8);
-      dirLight.intensity = 0.25;
-      dirLight.position.set(-10, 20, -10);
-
-      porchLight.intensity = 2.4;
-      facadeSpot.intensity = 2.8;
+      if (fillLight) {
+        fillLight.color.setHex(0x1e293b);
+        fillLight.intensity = 0.35;
+      }
+      if (porchLight) porchLight.intensity = 3.5;
+      if (facadeSpot) facadeSpot.intensity = 4.0;
     } else {
       // Crisp Natural Daylight
       scene.background = new THREE.Color(0xe6f0fa);
-      ambientLight.color.setHex(0xffffff);
-      ambientLight.intensity = 0.85;
+      if (hemiLight) {
+        hemiLight.color.setHex(0xffffff);
+        hemiLight.groundColor.setHex(0x64748b);
+        hemiLight.intensity = 1.4;
+      }
+      dirLight.color.setHex(0xfffaed);
+      dirLight.intensity = 2.2;
+      dirLight.position.set(20, 30, 22);
 
-      dirLight.color.setHex(0xfff8eb);
-      dirLight.intensity = 1.8;
-      dirLight.position.set(16, 26, 18);
+      if (fillLight) {
+        fillLight.color.setHex(0xdbeafe);
+        fillLight.intensity = 0.9;
+      }
+      if (porchLight) porchLight.intensity = 0;
+      if (facadeSpot) facadeSpot.intensity = 0;
+    }
 
-      porchLight.intensity = 0;
-      facadeSpot.intensity = 0;
+    if (rendererRef.current && sceneRef.current && cameraRef.current) {
+      rendererRef.current.render(sceneRef.current, cameraRef.current);
     }
   }, [isNight]);
 
-  // Auto-rotation
+  // ── 3. Auto-rotation Control ─────────────────────────────────────────────
   useEffect(() => {
     if (controlsRef.current) {
       controlsRef.current.autoRotate = isRotating;
-      controlsRef.current.autoRotateSpeed = 2.0;
+      controlsRef.current.autoRotateSpeed = 2.2;
     }
   }, [isRotating]);
 
-  // Build / Rebuild House Geometry on Parameter Changes
+  // ── 4. Build / Rebuild House Geometry (Only on Structural Changes) ───────
   useEffect(() => {
     const scene = sceneRef.current;
     if (!scene) return;
 
-    // Remove existing house group
+    // Dispose old house group
     if (houseGroupRef.current) {
       scene.remove(houseGroupRef.current);
-      houseGroupRef.current.traverse(obj => {
+      houseGroupRef.current.traverse((obj) => {
         if (obj.geometry) obj.geometry.dispose();
-        if (obj.material) {
-          if (Array.isArray(obj.material)) obj.material.forEach(m => m.dispose());
-          else obj.material.dispose();
-        }
       });
     }
 
@@ -325,126 +314,94 @@ const Exterior3DViewer = ({
     const floorH = 2.85;
     const numFloors = Math.min(Math.max(floors, 1), 3);
 
-    // Determine roughness & metalness modifier based on finishType
-    let finishRoughness = 0.75;
-    let finishMetalness = 0.05;
-    if (finishType === 'matte') { finishRoughness = 0.95; finishMetalness = 0.0; }
-    else if (finishType === 'satin') { finishRoughness = 0.65; finishMetalness = 0.05; }
-    else if (finishType === 'gloss') { finishRoughness = 0.25; finishMetalness = 0.15; }
-    else if (finishType === 'textured') { finishRoughness = 0.98; finishMetalness = 0.02; }
-    else if (finishType === 'stone') { finishRoughness = 0.85; finishMetalness = 0.08; }
-    else if (finishType === 'wood') { finishRoughness = 0.55; finishMetalness = 0.05; }
-    else if (finishType === 'metal') { finishRoughness = 0.35; finishMetalness = 0.8; }
-    else if (finishType === 'glass_tint') { finishRoughness = 0.1; finishMetalness = 0.9; }
-
-    // Dedicated materials for all 12 components:
-    // 1. Primary Wall Material
-    const wallPrimaryMat = new THREE.MeshStandardMaterial({
-      color: new THREE.Color(primaryColorHex),
-      roughness: isMinimal ? 0.95 : finishRoughness,
-      metalness: finishMetalness
-    });
-
-    // 2. Secondary Wall Material (recessed & side surfaces)
-    const wallSecondaryMat = new THREE.MeshStandardMaterial({
-      color: new THREE.Color(secondaryColorHex),
-      roughness: finishRoughness,
-      metalness: finishMetalness
-    });
-
-    // 3. Accent Wall Material
-    const wallAccentMat = new THREE.MeshStandardMaterial({
-      color: new THREE.Color(accentColorHex),
-      roughness: 0.6,
-      metalness: isLuxury ? 0.25 : 0.1
-    });
-
-    // 4. Front Facade Feature Material
-    const frontFacadeMat = new THREE.MeshStandardMaterial({
-      color: new THREE.Color(frontFacadeColorHex),
-      roughness: 0.55,
-      metalness: 0.15
-    });
-
-    // 5. Boundary Wall Material
-    const boundaryWallMat = new THREE.MeshStandardMaterial({
-      color: new THREE.Color(boundaryWallColorHex),
-      roughness: 0.85,
-      metalness: 0.03
-    });
-
-    // 6. Boundary Gate Material
-    const boundaryGateMat = new THREE.MeshStandardMaterial({
-      color: new THREE.Color(boundaryGateColorHex),
-      roughness: 0.35,
-      metalness: 0.75
-    });
-
-    // 7. Door Material
-    const doorMat = new THREE.MeshStandardMaterial({
-      color: new THREE.Color(doorColorHex),
-      roughness: 0.45,
-      metalness: 0.15
-    });
-
-    // 8. Window Frame Material
-    const windowFrameMat = new THREE.MeshStandardMaterial({
-      color: new THREE.Color(windowFrameColorHex),
-      roughness: 0.35,
-      metalness: 0.6
-    });
-
-    // 9. Window Glass Material (Tinted)
-    const windowGlassMat = new THREE.MeshStandardMaterial({
-      color: isNight ? 0xfff3a0 : new THREE.Color(windowGlassColorHex),
-      emissive: isNight ? 0xf59e0b : 0x000000,
-      emissiveIntensity: isNight ? 1.6 : 0.0,
-      roughness: 0.1,
-      metalness: 0.85,
-      transparent: true,
-      opacity: isNight ? 0.95 : 0.6
-    });
-
-    // 10. Railing Material
-    const railingMat = new THREE.MeshStandardMaterial({
-      color: new THREE.Color(railingColorHex),
-      roughness: 0.3,
-      metalness: 0.7
-    });
-
-    // 11. Roof Parapet Material
-    const roofParapetMat = new THREE.MeshStandardMaterial({
-      color: new THREE.Color(roofParapetColorHex),
-      roughness: 0.75,
-      metalness: 0.05
-    });
-
-    // 12. Exterior Trims Material
-    const exteriorTrimsMat = new THREE.MeshStandardMaterial({
-      color: new THREE.Color(exteriorTrimsColorHex),
-      roughness: 0.4,
-      metalness: 0.5
-    });
+    // Create & Register 12 Dedicated Standard Materials in Ref
+    const mats = {
+      primary_wall: new THREE.MeshStandardMaterial({
+        color: new THREE.Color(safeHex(customColors?.primary_wall, '#F4F4F0')),
+        roughness: isMinimal ? 0.95 : 0.85,
+        metalness: 0.05
+      }),
+      secondary_wall: new THREE.MeshStandardMaterial({
+        color: new THREE.Color(safeHex(customColors?.secondary_wall, '#E5E7EB')),
+        roughness: 0.85,
+        metalness: 0.05
+      }),
+      accent_wall: new THREE.MeshStandardMaterial({
+        color: new THREE.Color(safeHex(customColors?.accent_wall, '#2B313B')),
+        roughness: 0.6,
+        metalness: isLuxury ? 0.25 : 0.1
+      }),
+      front_facade: new THREE.MeshStandardMaterial({
+        color: new THREE.Color(safeHex(customColors?.front_facade || customColors?.primary_wall, '#F4F4F0')),
+        roughness: 0.55,
+        metalness: 0.15
+      }),
+      boundary_wall: new THREE.MeshStandardMaterial({
+        color: new THREE.Color(safeHex(customColors?.boundary_wall, '#E5E0D6')),
+        roughness: 0.85,
+        metalness: 0.03
+      }),
+      boundary_gate: new THREE.MeshStandardMaterial({
+        color: new THREE.Color(safeHex(customColors?.boundary_gate, '#30343B')),
+        roughness: 0.35,
+        metalness: 0.75
+      }),
+      door: new THREE.MeshStandardMaterial({
+        color: new THREE.Color(safeHex(customColors?.door, '#8B5A2B')),
+        roughness: 0.45,
+        metalness: 0.15
+      }),
+      window_frame: new THREE.MeshStandardMaterial({
+        color: new THREE.Color(safeHex(customColors?.window_frame, '#20252B')),
+        roughness: 0.35,
+        metalness: 0.6
+      }),
+      window_glass_tint: new THREE.MeshStandardMaterial({
+        color: isNight ? 0xfff3a0 : new THREE.Color(safeHex(customColors?.window_glass_tint, '#7DD3FC')),
+        emissive: isNight ? 0xf59e0b : 0x000000,
+        emissiveIntensity: isNight ? 2.4 : 0.0,
+        roughness: 0.1,
+        metalness: 0.85,
+        transparent: true,
+        opacity: isNight ? 0.95 : 0.65
+      }),
+      railing: new THREE.MeshStandardMaterial({
+        color: new THREE.Color(safeHex(customColors?.railing, '#1F2937')),
+        roughness: 0.3,
+        metalness: 0.7
+      }),
+      roof_parapet: new THREE.MeshStandardMaterial({
+        color: new THREE.Color(safeHex(customColors?.roof_parapet, '#343A40')),
+        roughness: 0.75,
+        metalness: 0.05
+      }),
+      exterior_trims: new THREE.MeshStandardMaterial({
+        color: new THREE.Color(safeHex(customColors?.exterior_trims, '#20252B')),
+        roughness: 0.4,
+        metalness: 0.5
+      })
+    };
+    materialsRef.current = mats;
 
     const concreteSlabMat = new THREE.MeshStandardMaterial({
       color: 0xd6d3d1,
       roughness: 0.8
     });
 
-    // ── Build Each Floor ──────────────────────────────────────────────────
+    // ── Build Each Floor Massing ──────────────────────────────────────────
     for (let f = 0; f < numFloors; f++) {
       const floorBaseY = 0.3 + f * floorH;
       const isGround = f === 0;
-      const isTop = f === numFloors - 1;
 
       // Cantilever projection on upper floors for modern / duplex
       const cantileverZ = !isGround && !isTraditionalOrClay ? 0.6 : 0;
       const fWidth = !isGround && isMinimal ? bldgW * 0.95 : bldgW;
       const fDepth = bldgD;
 
-      // 1. Floor Wall Mass (Primary Wall)
+      // 1. Primary Wall Mass
       const wallGeo = new THREE.BoxGeometry(fWidth, floorH, fDepth);
-      const wallMesh = new THREE.Mesh(wallGeo, wallPrimaryMat);
+      const wallMesh = new THREE.Mesh(wallGeo, mats.primary_wall);
+      wallMesh.userData = { componentId: 'primary_wall' };
       wallMesh.position.set(0, floorBaseY + floorH / 2, cantileverZ / 2);
       wallMesh.castShadow = true;
       wallMesh.receiveShadow = true;
@@ -452,18 +409,16 @@ const Exterior3DViewer = ({
 
       // 2. Secondary Wall Mass (Side Flank / Rear Wing Return)
       const sideWallGeo = new THREE.BoxGeometry(0.12, floorH * 0.98, fDepth * 0.7);
-      const sideWallMesh = new THREE.Mesh(sideWallGeo, wallSecondaryMat);
+      const sideWallMesh = new THREE.Mesh(sideWallGeo, mats.secondary_wall);
+      sideWallMesh.userData = { componentId: 'secondary_wall' };
       sideWallMesh.position.set(fWidth / 2 + 0.05, floorBaseY + floorH / 2, -fDepth * 0.1);
       sideWallMesh.castShadow = true;
       houseGroup.add(sideWallMesh);
 
-      // 3. Accent Cladding Vertical Feature (left side of facade)
-      const accentGeo = new THREE.BoxGeometry(
-        fWidth * 0.32,
-        floorH + 0.02,
-        0.18
-      );
-      const accentMesh = new THREE.Mesh(accentGeo, wallAccentMat);
+      // 3. Accent Feature Cladding (Left vertical column)
+      const accentGeo = new THREE.BoxGeometry(fWidth * 0.32, floorH + 0.02, 0.18);
+      const accentMesh = new THREE.Mesh(accentGeo, mats.accent_wall);
+      accentMesh.userData = { componentId: 'accent_wall' };
       accentMesh.position.set(
         -fWidth * 0.32,
         floorBaseY + floorH / 2,
@@ -472,13 +427,10 @@ const Exterior3DViewer = ({
       accentMesh.castShadow = true;
       houseGroup.add(accentMesh);
 
-      // 4. Front Facade Feature Surround (Architectural Portal Frame)
-      const facadePortalGeo = new THREE.BoxGeometry(
-        fWidth * 0.42,
-        0.16,
-        0.25
-      );
-      const facadePortalMesh = new THREE.Mesh(facadePortalGeo, frontFacadeMat);
+      // 4. Front Facade Architectural Portal Surround
+      const facadePortalGeo = new THREE.BoxGeometry(fWidth * 0.42, 0.16, 0.25);
+      const facadePortalMesh = new THREE.Mesh(facadePortalGeo, mats.front_facade);
+      facadePortalMesh.userData = { componentId: 'front_facade' };
       facadePortalMesh.position.set(
         fWidth * 0.15,
         floorBaseY + floorH - 0.08,
@@ -487,13 +439,9 @@ const Exterior3DViewer = ({
       facadePortalMesh.castShadow = true;
       houseGroup.add(facadePortalMesh);
 
-      // If Indian Modern: Add terracotta jaali pattern geometry
+      // If Indian Modern: Add terracotta jaali screen element
       if (isIndianModern) {
-        const jaaliGeo = new THREE.BoxGeometry(
-          fWidth * 0.26,
-          floorH * 0.85,
-          0.1
-        );
+        const jaaliGeo = new THREE.BoxGeometry(fWidth * 0.26, floorH * 0.85, 0.1);
         const jaaliMat = new THREE.MeshStandardMaterial({
           color: 0xb85333,
           roughness: 0.9
@@ -507,98 +455,78 @@ const Exterior3DViewer = ({
         houseGroup.add(jaaliMesh);
       }
 
-      // Ground Floor Entrance or Upper Floor Windows
+      // Ground Floor Entrance & Windows
       if (isGround) {
-        // Entrance Grand Door
+        // Main Entrance Door
         const doorGeo = new THREE.BoxGeometry(1.2, 2.2, 0.15);
-        const doorMesh = new THREE.Mesh(doorGeo, doorMat);
+        const doorMesh = new THREE.Mesh(doorGeo, mats.door);
+        doorMesh.userData = { componentId: 'door' };
         doorMesh.position.set(fWidth * 0.15, floorBaseY + 1.1, fDepth / 2 + 0.08);
         doorMesh.castShadow = true;
         houseGroup.add(doorMesh);
 
-        // Entrance Canopy / Portico (Exterior Trims)
+        // Entrance Portico Canopy (Exterior Trims)
         const canopyGeo = new THREE.BoxGeometry(2.4, 0.15, 1.6);
-        const canopyMesh = new THREE.Mesh(canopyGeo, exteriorTrimsMat);
-        canopyMesh.position.set(
-          fWidth * 0.15,
-          floorBaseY + 2.3,
-          fDepth / 2 + 0.8
-        );
+        const canopyMesh = new THREE.Mesh(canopyGeo, mats.exterior_trims);
+        canopyMesh.userData = { componentId: 'exterior_trims' };
+        canopyMesh.position.set(fWidth * 0.15, floorBaseY + 2.3, fDepth / 2 + 0.8);
         canopyMesh.castShadow = true;
         houseGroup.add(canopyMesh);
 
-        // Ground Floor Picture Window
+        // Ground Floor Panoramic Picture Window
         const winGeo = new THREE.BoxGeometry(2.0, 1.6, 0.1);
-        const winMesh = new THREE.Mesh(winGeo, windowGlassMat);
-        winMesh.position.set(
-          fWidth * 0.28,
-          floorBaseY + 1.25,
-          fDepth / 2 + 0.06
-        );
+        const winMesh = new THREE.Mesh(winGeo, mats.window_glass_tint);
+        winMesh.userData = { componentId: 'window_glass_tint' };
+        winMesh.position.set(fWidth * 0.28, floorBaseY + 1.25, fDepth / 2 + 0.06);
         houseGroup.add(winMesh);
 
         // Window Frame
         const frameGeo = new THREE.BoxGeometry(2.1, 1.7, 0.08);
-        const frameMesh = new THREE.Mesh(frameGeo, windowFrameMat);
-        frameMesh.position.set(
-          fWidth * 0.28,
-          floorBaseY + 1.25,
-          fDepth / 2 + 0.04
-        );
+        const frameMesh = new THREE.Mesh(frameGeo, mats.window_frame);
+        frameMesh.userData = { componentId: 'window_frame' };
+        frameMesh.position.set(fWidth * 0.28, floorBaseY + 1.25, fDepth / 2 + 0.04);
         houseGroup.add(frameMesh);
       } else {
-        // Upper Floor Large Panoramic Window / Sliding Balcony Door
+        // Upper Floor Large Window
         const winGeo = new THREE.BoxGeometry(fWidth * 0.45, 1.9, 0.1);
-        const winMesh = new THREE.Mesh(winGeo, windowGlassMat);
-        winMesh.position.set(
-          fWidth * 0.18,
-          floorBaseY + 1.2,
-          fDepth / 2 + cantileverZ / 2 + 0.06
-        );
+        const winMesh = new THREE.Mesh(winGeo, mats.window_glass_tint);
+        winMesh.userData = { componentId: 'window_glass_tint' };
+        winMesh.position.set(fWidth * 0.18, floorBaseY + 1.2, fDepth / 2 + cantileverZ / 2 + 0.06);
         houseGroup.add(winMesh);
 
         // Upper Window Frame
         const upperFrameGeo = new THREE.BoxGeometry(fWidth * 0.46, 2.0, 0.08);
-        const upperFrameMesh = new THREE.Mesh(upperFrameGeo, windowFrameMat);
-        upperFrameMesh.position.set(
-          fWidth * 0.18,
-          floorBaseY + 1.2,
-          fDepth / 2 + cantileverZ / 2 + 0.04
-        );
+        const upperFrameMesh = new THREE.Mesh(upperFrameGeo, mats.window_frame);
+        upperFrameMesh.userData = { componentId: 'window_frame' };
+        upperFrameMesh.position.set(fWidth * 0.18, floorBaseY + 1.2, fDepth / 2 + cantileverZ / 2 + 0.04);
         houseGroup.add(upperFrameMesh);
 
-        // Cantilevered Balcony Slab
+        // Balcony Slab
         const balcSlabGeo = new THREE.BoxGeometry(fWidth * 0.52, 0.2, 1.2);
         const balcSlab = new THREE.Mesh(balcSlabGeo, concreteSlabMat);
-        balcSlab.position.set(
-          fWidth * 0.18,
-          floorBaseY + 0.1,
-          fDepth / 2 + cantileverZ / 2 + 0.6
-        );
+        balcSlab.position.set(fWidth * 0.18, floorBaseY + 0.1, fDepth / 2 + cantileverZ / 2 + 0.6);
         balcSlab.castShadow = true;
         balcSlab.receiveShadow = true;
         houseGroup.add(balcSlab);
 
         // Balcony Railing
         const railGeo = new THREE.BoxGeometry(fWidth * 0.5, 0.95, 0.05);
-        const railMesh = new THREE.Mesh(railGeo, railingMat);
-        railMesh.position.set(
-          fWidth * 0.18,
-          floorBaseY + 0.65,
-          fDepth / 2 + cantileverZ / 2 + 1.15
-        );
+        const railMesh = new THREE.Mesh(railGeo, mats.railing);
+        railMesh.userData = { componentId: 'railing' };
+        railMesh.position.set(fWidth * 0.18, floorBaseY + 0.65, fDepth / 2 + cantileverZ / 2 + 1.15);
         houseGroup.add(railMesh);
       }
 
-      // Side Windows
+      // Side Windows & Frames
       const sideWinGeo = new THREE.BoxGeometry(0.1, 1.4, 1.6);
-      const sideWin = new THREE.Mesh(sideWinGeo, windowGlassMat);
+      const sideWin = new THREE.Mesh(sideWinGeo, mats.window_glass_tint);
+      sideWin.userData = { componentId: 'window_glass_tint' };
       sideWin.position.set(fWidth / 2 + 0.04, floorBaseY + 1.3, 0);
       houseGroup.add(sideWin);
 
-      // Side Window Frame
       const sideFrameGeo = new THREE.BoxGeometry(0.08, 1.5, 1.7);
-      const sideFrame = new THREE.Mesh(sideFrameGeo, windowFrameMat);
+      const sideFrame = new THREE.Mesh(sideFrameGeo, mats.window_frame);
+      sideFrame.userData = { componentId: 'window_frame' };
       sideFrame.position.set(fWidth / 2 + 0.03, floorBaseY + 1.3, 0);
       houseGroup.add(sideFrame);
     }
@@ -607,7 +535,7 @@ const Exterior3DViewer = ({
     const totalBuildingH = 0.3 + numFloors * floorH;
 
     if (isTraditionalOrClay) {
-      // Sloping Pitched Clay Tile Roof (Mangalore / Spanish Terracotta)
+      // Sloping Pitched Clay Tile Roof
       const roofH = 1.9;
       const roofOverhang = 0.8;
       const roofGeo = new THREE.ConeGeometry(
@@ -616,19 +544,21 @@ const Exterior3DViewer = ({
         4
       );
       roofGeo.rotateY(Math.PI / 4);
-      const roofMesh = new THREE.Mesh(roofGeo, roofParapetMat);
+      const roofMesh = new THREE.Mesh(roofGeo, mats.roof_parapet);
+      roofMesh.userData = { componentId: 'roof_parapet' };
       roofMesh.position.set(0, totalBuildingH + roofH / 2, 0);
       roofMesh.castShadow = true;
       houseGroup.add(roofMesh);
     } else {
-      // Modern Flat Terrace with Parapet Wall
+      // Modern Terrace with Parapet
       const parapetGeo = new THREE.BoxGeometry(bldgW + 0.2, 0.8, bldgD + 0.2);
-      const parapetMesh = new THREE.Mesh(parapetGeo, roofParapetMat);
+      const parapetMesh = new THREE.Mesh(parapetGeo, mats.roof_parapet);
+      parapetMesh.userData = { componentId: 'roof_parapet' };
       parapetMesh.position.set(0, totalBuildingH + 0.4, 0);
       parapetMesh.castShadow = true;
       houseGroup.add(parapetMesh);
 
-      // Terrace Hollow Core
+      // Terrace Core
       const terraceCoreGeo = new THREE.BoxGeometry(bldgW - 0.4, 0.82, bldgD - 0.4);
       const terraceCoreMat = new THREE.MeshStandardMaterial({
         color: 0x94a3b8,
@@ -638,16 +568,17 @@ const Exterior3DViewer = ({
       terraceCore.position.set(0, totalBuildingH + 0.42, 0);
       houseGroup.add(terraceCore);
 
-      // Architectural Modern Pergola (Exterior Trims)
+      // Architectural Modern Pergola
       const pergolaGeo = new THREE.BoxGeometry(bldgW * 0.4, 0.15, bldgD * 0.35);
-      const pergolaMesh = new THREE.Mesh(pergolaGeo, exteriorTrimsMat);
+      const pergolaMesh = new THREE.Mesh(pergolaGeo, mats.exterior_trims);
+      pergolaMesh.userData = { componentId: 'exterior_trims' };
       pergolaMesh.position.set(bldgW * 0.2, totalBuildingH + 1.8, -bldgD * 0.15);
       pergolaMesh.castShadow = true;
       houseGroup.add(pergolaMesh);
 
-      // Pergola Support Columns (Exterior Trims)
       const colGeo = new THREE.BoxGeometry(0.12, 1.8, 0.12);
-      const col1 = new THREE.Mesh(colGeo, exteriorTrimsMat);
+      const col1 = new THREE.Mesh(colGeo, mats.exterior_trims);
+      col1.userData = { componentId: 'exterior_trims' };
       col1.position.set(bldgW * 0.38, totalBuildingH + 0.9, -bldgD * 0.3);
       houseGroup.add(col1);
     }
@@ -657,50 +588,131 @@ const Exterior3DViewer = ({
     const boundaryThick = 0.18;
     const frontWallZ = (plotL * plotScale) / 2 + 0.3;
 
-    // Left Front Compound Wall
     const leftWallGeo = new THREE.BoxGeometry(bldgW * 0.35, wallHeight, boundaryThick);
-    const leftWall = new THREE.Mesh(leftWallGeo, boundaryWallMat);
+    const leftWall = new THREE.Mesh(leftWallGeo, mats.boundary_wall);
+    leftWall.userData = { componentId: 'boundary_wall' };
     leftWall.position.set(-bldgW * 0.32, wallHeight / 2 + 0.3, frontWallZ);
     leftWall.castShadow = true;
     houseGroup.add(leftWall);
 
-    // Right Front Compound Wall
     const rightWallGeo = new THREE.BoxGeometry(bldgW * 0.2, wallHeight, boundaryThick);
-    const rightWall = new THREE.Mesh(rightWallGeo, boundaryWallMat);
+    const rightWall = new THREE.Mesh(rightWallGeo, mats.boundary_wall);
+    rightWall.userData = { componentId: 'boundary_wall' };
     rightWall.position.set(bldgW * 0.4, wallHeight / 2 + 0.3, frontWallZ);
     rightWall.castShadow = true;
     houseGroup.add(rightWall);
 
-    // Front Sliding Gate (Slatted Metal)
     const gateGeo = new THREE.BoxGeometry(bldgW * 0.36, wallHeight * 0.9, 0.06);
-    const gateMesh = new THREE.Mesh(gateGeo, boundaryGateMat);
+    const gateMesh = new THREE.Mesh(gateGeo, mats.boundary_gate);
+    gateMesh.userData = { componentId: 'boundary_gate' };
     gateMesh.position.set(bldgW * 0.08, wallHeight * 0.45 + 0.3, frontWallZ);
     gateMesh.castShadow = true;
     houseGroup.add(gateMesh);
 
     scene.add(houseGroup);
-  }, [
-    plotW,
-    plotL,
-    floors,
-    primaryColorHex,
-    secondaryColorHex,
-    accentColorHex,
-    frontFacadeColorHex,
-    boundaryWallColorHex,
-    boundaryGateColorHex,
-    doorColorHex,
-    windowFrameColorHex,
-    windowGlassColorHex,
-    railingColorHex,
-    roofParapetColorHex,
-    exteriorTrimsColorHex,
-    finishType,
-    category,
-    isNight
-  ]);
+  }, [plotW, plotL, floors, category]);
 
-  // Camera Presets
+  // ── 5. Instant In-Place Material Color & Finish Synchronization ──────────
+  // Runs immediately when customColors or customMaterials change without rebuilding geometry!
+  useEffect(() => {
+    if (!materialsRef.current || Object.keys(materialsRef.current).length === 0) return;
+    const mats = materialsRef.current;
+    if (typeof window !== 'undefined') {
+      window.__exteriorViewerMaterials = mats;
+    }
+
+    // Apply Colors
+    if (mats.primary_wall) {
+      mats.primary_wall.color.set(safeHex(customColors?.primary_wall, '#F4F4F0'));
+      mats.primary_wall.needsUpdate = true;
+    }
+    if (mats.secondary_wall) {
+      mats.secondary_wall.color.set(safeHex(customColors?.secondary_wall, '#E5E7EB'));
+      mats.secondary_wall.needsUpdate = true;
+    }
+    if (mats.accent_wall) {
+      mats.accent_wall.color.set(safeHex(customColors?.accent_wall, '#2B313B'));
+      mats.accent_wall.needsUpdate = true;
+    }
+    if (mats.front_facade) {
+      mats.front_facade.color.set(safeHex(customColors?.front_facade || customColors?.primary_wall, '#F4F4F0'));
+      mats.front_facade.needsUpdate = true;
+    }
+    if (mats.boundary_wall) {
+      mats.boundary_wall.color.set(safeHex(customColors?.boundary_wall, '#E5E0D6'));
+      mats.boundary_wall.needsUpdate = true;
+    }
+    if (mats.boundary_gate) {
+      mats.boundary_gate.color.set(safeHex(customColors?.boundary_gate, '#30343B'));
+      mats.boundary_gate.needsUpdate = true;
+    }
+    if (mats.door) {
+      mats.door.color.set(safeHex(customColors?.door, '#8B5A2B'));
+      mats.door.needsUpdate = true;
+    }
+    if (mats.window_frame) {
+      mats.window_frame.color.set(safeHex(customColors?.window_frame, '#20252B'));
+      mats.window_frame.needsUpdate = true;
+    }
+    if (mats.railing) {
+      mats.railing.color.set(safeHex(customColors?.railing, '#1F2937'));
+      mats.railing.needsUpdate = true;
+    }
+    if (mats.roof_parapet) {
+      mats.roof_parapet.color.set(safeHex(customColors?.roof_parapet, '#343A40'));
+      mats.roof_parapet.needsUpdate = true;
+    }
+    if (mats.exterior_trims) {
+      mats.exterior_trims.color.set(safeHex(customColors?.exterior_trims, '#20252B'));
+      mats.exterior_trims.needsUpdate = true;
+    }
+
+    // Window Glass with Night mode emission
+    if (mats.window_glass_tint) {
+      if (isNight) {
+        mats.window_glass_tint.color.setHex(0xfff3a0);
+        mats.window_glass_tint.emissive.setHex(0xf59e0b);
+        mats.window_glass_tint.emissiveIntensity = 2.4;
+        mats.window_glass_tint.opacity = 0.95;
+      } else {
+        mats.window_glass_tint.color.set(safeHex(customColors?.window_glass_tint, '#7DD3FC'));
+        mats.window_glass_tint.emissive.setHex(0x000000);
+        mats.window_glass_tint.emissiveIntensity = 0.0;
+        mats.window_glass_tint.opacity = 0.65;
+      }
+      mats.window_glass_tint.needsUpdate = true;
+    }
+
+    // Material finish properties (roughness & metalness)
+    const fType = customMaterials?.finish_type || 'matte_paint';
+    let finishRoughness = 0.85;
+    let finishMetalness = 0.05;
+    if (fType === 'smooth_acrylic') { finishRoughness = 0.55; finishMetalness = 0.05; }
+    else if (fType === 'textured_grit') { finishRoughness = 0.98; finishMetalness = 0.02; }
+    else if (fType === 'board_concrete') { finishRoughness = 0.90; finishMetalness = 0.08; }
+    else if (fType === 'laterite_stone') { finishRoughness = 0.92; finishMetalness = 0.04; }
+    else if (fType === 'dholpur_sandstone') { finishRoughness = 0.88; finishMetalness = 0.05; }
+    else if (fType === 'limestone_wash') { finishRoughness = 0.96; finishMetalness = 0.0; }
+    else if (fType === 'fluted_battens') { finishRoughness = 0.60; finishMetalness = 0.15; }
+
+    if (mats.primary_wall) {
+      mats.primary_wall.roughness = finishRoughness;
+      mats.primary_wall.metalness = finishMetalness;
+      mats.primary_wall.needsUpdate = true;
+    }
+    if (mats.secondary_wall) {
+      mats.secondary_wall.roughness = finishRoughness;
+      mats.secondary_wall.metalness = finishMetalness;
+      mats.secondary_wall.needsUpdate = true;
+    }
+
+    // Force instantaneous repaint
+    if (rendererRef.current && sceneRef.current && cameraRef.current) {
+      rendererRef.current.render(sceneRef.current, cameraRef.current);
+    }
+  }, [customColors, customMaterials, isNight]);
+
+  // ── 6. Camera Presets ────────────────────────────────────────────────────
   const setCameraPreset = (preset) => {
     setActivePreset(preset);
     const camera = cameraRef.current;
@@ -732,7 +744,7 @@ const Exterior3DViewer = ({
     controls.update();
   };
 
-  // Snapshot PNG Download
+  // ── 7. Snapshot PNG Download ─────────────────────────────────────────────
   const handleCaptureSnapshot = () => {
     const renderer = rendererRef.current;
     if (!renderer) return;
@@ -747,245 +759,128 @@ const Exterior3DViewer = ({
   };
 
   return (
-    <div className={`exterior-3d-wrapper ${className}`} style={{ position: 'relative', width: '100%', height: '100%', minHeight: '480px', borderRadius: '16px', overflow: 'hidden', background: isNight ? '#0a0f1d' : '#e6f0fa' }}>
+    <div
+      className={`exterior-3d-wrapper ${className}`}
+      style={{
+        position: 'relative',
+        width: '100%',
+        height: '100%',
+        minHeight: '480px',
+        borderRadius: '16px',
+        overflow: 'hidden',
+        background: isNight ? '#0a0f1d' : '#e6f0fa'
+      }}
+    >
       {/* 3D Canvas Mount */}
       <div ref={mountRef} style={{ width: '100%', height: '100%', minHeight: '480px' }} />
 
-      {/* Floating Control Overlay: View Presets */}
-      <div
-        style={{
-          position: 'absolute',
-          top: '16px',
-          left: '16px',
-          display: 'flex',
-          gap: '6px',
-          background: 'rgba(15, 23, 42, 0.75)',
-          backdropFilter: 'blur(8px)',
-          padding: '4px',
-          borderRadius: '10px',
-          border: '1px solid rgba(255, 255, 255, 0.1)',
-          zIndex: 10
-        }}
-      >
-        <button
-          onClick={() => setCameraPreset('front')}
-          style={{
-            padding: '6px 12px',
-            fontSize: '0.75rem',
-            fontWeight: 600,
-            borderRadius: '6px',
-            border: 'none',
-            cursor: 'pointer',
-            background: activePreset === 'front' ? 'var(--color-accent, #3b82f6)' : 'transparent',
-            color: '#ffffff',
-            transition: 'all 0.15s ease'
-          }}
-          title="Direct Front Elevation"
-        >
-          Front Elevation
-        </button>
-        <button
-          onClick={() => setCameraPreset('front_left')}
-          style={{
-            padding: '6px 12px',
-            fontSize: '0.75rem',
-            fontWeight: 600,
-            borderRadius: '6px',
-            border: 'none',
-            cursor: 'pointer',
-            background: activePreset === 'front_left' ? 'var(--color-accent, #3b82f6)' : 'transparent',
-            color: '#ffffff',
-            transition: 'all 0.15s ease'
-          }}
-          title="3/4 Front-Left Perspective"
-        >
-          Perspective Left
-        </button>
-        <button
-          onClick={() => setCameraPreset('front_right')}
-          style={{
-            padding: '6px 12px',
-            fontSize: '0.75rem',
-            fontWeight: 600,
-            borderRadius: '6px',
-            border: 'none',
-            cursor: 'pointer',
-            background: activePreset === 'front_right' ? 'var(--color-accent, #3b82f6)' : 'transparent',
-            color: '#ffffff',
-            transition: 'all 0.15s ease'
-          }}
-          title="3/4 Front-Right Perspective"
-        >
-          Perspective Right
-        </button>
-        <button
-          onClick={() => setCameraPreset('top')}
-          style={{
-            padding: '6px 12px',
-            fontSize: '0.75rem',
-            fontWeight: 600,
-            borderRadius: '6px',
-            border: 'none',
-            cursor: 'pointer',
-            background: activePreset === 'top' ? 'var(--color-accent, #3b82f6)' : 'transparent',
-            color: '#ffffff',
-            transition: 'all 0.15s ease'
-          }}
-          title="Top-Down Bird's Eye View"
-        >
-          Aerial
-        </button>
+      {/* ── Responsive Non-Overlapping Top Bar ── */}
+      <div className="viewer-top-bar-v3">
+        {/* Camera Angle Presets */}
+        <div className="viewer-presets-pill-group">
+          <span className="viewer-group-label">View</span>
+          <button
+            type="button"
+            className={`btn-viewer-preset ${activePreset === 'front' ? 'active' : ''}`}
+            onClick={() => setCameraPreset('front')}
+            title="Direct Front Elevation"
+          >
+            Front
+          </button>
+          <button
+            type="button"
+            className={`btn-viewer-preset ${activePreset === 'front_left' ? 'active' : ''}`}
+            onClick={() => setCameraPreset('front_left')}
+            title="3/4 Front-Left Perspective"
+          >
+            3/4 Left
+          </button>
+          <button
+            type="button"
+            className={`btn-viewer-preset ${activePreset === 'front_right' ? 'active' : ''}`}
+            onClick={() => setCameraPreset('front_right')}
+            title="3/4 Front-Right Perspective"
+          >
+            3/4 Right
+          </button>
+          <button
+            type="button"
+            className={`btn-viewer-preset ${activePreset === 'top' ? 'active' : ''}`}
+            onClick={() => setCameraPreset('top')}
+            title="Top-Down Bird's Eye View"
+          >
+            Aerial
+          </button>
+        </div>
+
+        {/* View Actions: Day/Night, Turntable, Reset Camera, Snapshot */}
+        <div className="viewer-actions-pill-group">
+          <button
+            type="button"
+            className={`btn-viewer-action ${isNight ? 'night-active' : ''}`}
+            onClick={() => {
+              const next = !isNight;
+              setIsNight(next);
+              onToggleLighting?.(next ? 'night' : 'daylight');
+            }}
+            title="Toggle Daylight Sun / Night Atmosphere"
+          >
+            {isNight ? <Moon size={14} color="#fde047" /> : <Sun size={14} color="#f59e0b" />}
+            <span>{isNight ? 'Night Atmosphere' : 'Daylight Sun'}</span>
+          </button>
+
+          <button
+            type="button"
+            className={`btn-viewer-action ${isRotating ? 'active' : ''}`}
+            onClick={() => setIsRotating((r) => !r)}
+            title="Auto-rotate 360° architectural model"
+          >
+            <RotateCw size={14} className={isRotating ? 'spin' : ''} />
+            <span>Turntable</span>
+          </button>
+
+          <button
+            type="button"
+            className="btn-viewer-action"
+            onClick={() => setCameraPreset('front_left')}
+            title="Reset Camera to Default Perspective"
+          >
+            <RotateCcw size={14} />
+            <span>Reset Camera</span>
+          </button>
+
+          <button
+            type="button"
+            className="btn-viewer-action"
+            onClick={handleCaptureSnapshot}
+            title="Export 3D Architectural View as PNG"
+          >
+            <Camera size={14} />
+            <span>Capture 3D</span>
+          </button>
+        </div>
       </div>
 
-      {/* Floating Control Overlay: Day/Night, Turntable, Snapshot */}
-      <div
-        style={{
-          position: 'absolute',
-          top: '16px',
-          right: '16px',
-          display: 'flex',
-          gap: '8px',
-          zIndex: 10
-        }}
-      >
-        {/* Day/Night Toggle */}
-        <button
-          onClick={() => {
-            const next = !isNight;
-            setIsNight(next);
-            onToggleLighting?.(next ? 'night' : 'daylight');
-          }}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            padding: '7px 14px',
-            fontSize: '0.75rem',
-            fontWeight: 600,
-            borderRadius: '10px',
-            border: '1px solid rgba(255, 255, 255, 0.15)',
-            background: isNight ? '#1e293b' : '#ffffff',
-            color: isNight ? '#fde047' : '#0f172a',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-            cursor: 'pointer',
-            transition: 'all 0.2s ease'
-          }}
-          title="Toggle Day / Night Architectural Lighting"
-        >
-          {isNight ? <Moon size={14} color="#fde047" /> : <Sun size={14} color="#f59e0b" />}
-          <span>{isNight ? 'Night Atmosphere' : 'Daylight Sun'}</span>
-        </button>
+      {/* ── Responsive Non-Overlapping Bottom Bar ── */}
+      <div className="viewer-bottom-bar-v3">
+        {/* Grounding Info Badge */}
+        <div className="viewer-bottom-left-badge">
+          <span className="ground-dot" />
+          <span className="ground-tag-full" style={{ color: '#38bdf8', fontWeight: 700 }}>DIMENSION GROUNDED</span>
+          <span className="ground-tag-short" style={{ color: '#38bdf8', fontWeight: 700 }}>GROUNDED</span>
+          <span className="badge-sep">•</span>
+          <span>{plotW}′ × {plotL}′ Plot</span>
+          <span className="badge-sep">•</span>
+          <span>{floors > 1 ? `G + ${floors - 1} Floors` : 'Ground Floor'}</span>
+          <span className="badge-sep">•</span>
+          <span>{facing} Facing</span>
+        </div>
 
-        {/* Turntable Auto-Rotate */}
-        <button
-          onClick={() => setIsRotating(r => !r)}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: '36px',
-            height: '36px',
-            borderRadius: '10px',
-            border: '1px solid rgba(255, 255, 255, 0.15)',
-            background: isRotating ? 'var(--color-accent, #3b82f6)' : 'rgba(15, 23, 42, 0.75)',
-            color: '#ffffff',
-            cursor: 'pointer',
-            backdropFilter: 'blur(8px)'
-          }}
-          title="Auto-rotate 360° architectural model"
-        >
-          <RotateCw size={15} />
-        </button>
-
-        {/* Reset Camera to Default Perspective */}
-        <button
-          onClick={() => setCameraPreset('front_left')}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: '36px',
-            height: '36px',
-            borderRadius: '10px',
-            border: '1px solid rgba(255, 255, 255, 0.15)',
-            background: 'rgba(15, 23, 42, 0.75)',
-            color: '#ffffff',
-            cursor: 'pointer',
-            backdropFilter: 'blur(8px)'
-          }}
-          title="Reset Camera to Default Perspective"
-        >
-          <RotateCcw size={15} />
-        </button>
-
-        {/* Snapshot PNG */}
-        <button
-          onClick={handleCaptureSnapshot}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            padding: '7px 14px',
-            fontSize: '0.75rem',
-            fontWeight: 600,
-            borderRadius: '10px',
-            border: '1px solid rgba(255, 255, 255, 0.15)',
-            background: 'rgba(15, 23, 42, 0.75)',
-            color: '#ffffff',
-            cursor: 'pointer',
-            backdropFilter: 'blur(8px)'
-          }}
-          title="Export 3D Architectural View as PNG"
-        >
-          <Camera size={14} />
-          <span>Capture 3D</span>
-        </button>
-      </div>
-
-      {/* Grounding Info Badge (Bottom Left) */}
-      <div
-        style={{
-          position: 'absolute',
-          bottom: '16px',
-          left: '16px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          background: 'rgba(15, 23, 42, 0.75)',
-          backdropFilter: 'blur(8px)',
-          padding: '6px 14px',
-          borderRadius: '8px',
-          border: '1px solid rgba(255, 255, 255, 0.1)',
-          color: '#ffffff',
-          fontSize: '0.72rem',
-          zIndex: 10
-        }}
-      >
-        <span style={{ color: 'var(--color-accent, #60a5fa)', fontWeight: 600 }}>DIMENSION GROUNDED</span>
-        <span>•</span>
-        <span>{plotW}′ × {plotL}′ Plot</span>
-        <span>•</span>
-        <span>{floors > 1 ? `G + ${floors - 1} Floors` : 'Ground Floor'}</span>
-        <span>•</span>
-        <span>{facing} Facing</span>
-      </div>
-
-      {/* Interactive Helper Badge (Bottom Right) */}
-      <div
-        style={{
-          position: 'absolute',
-          bottom: '16px',
-          right: '16px',
-          background: 'rgba(15, 23, 42, 0.65)',
-          backdropFilter: 'blur(8px)',
-          padding: '5px 12px',
-          borderRadius: '6px',
-          color: 'rgba(255, 255, 255, 0.7)',
-          fontSize: '0.68rem',
-          zIndex: 10
-        }}
-      >
-        Drag to Orbit • Scroll to Zoom • Right-click to Pan
+        {/* Interactive Helper Badge */}
+        <div className="viewer-bottom-right-badge">
+          <span className="hint-full">Drag to Orbit • Scroll to Zoom • Right-click to Pan</span>
+          <span className="hint-short">Drag to Orbit • Scroll to Zoom</span>
+        </div>
       </div>
     </div>
   );

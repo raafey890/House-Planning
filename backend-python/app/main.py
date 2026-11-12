@@ -2,11 +2,15 @@ from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.routes import floor_plans, cost_estimation, interior_designs, exterior_designs
 
+from app.core.config import settings
+
 app = FastAPI(title="AI House Planner - Geometry & Planning Engine")
+
+allowed_origins = [o.strip() for o in settings.CORS_ORIGINS.split(",") if o.strip()]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"], 
+    allow_origins=allowed_origins if allowed_origins else ["http://localhost:5173", "http://127.0.0.1:5173"], 
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -29,5 +33,6 @@ def verify_auth(user_id: str = Depends(get_current_user)):
     }
 
 @app.get("/health")
+@app.get("/api/health")
 def health_check():
     return {"status": "ok", "service": "House Planner Geometry API", "version": "1.0.0"}

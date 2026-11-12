@@ -2,7 +2,7 @@ function Footer() {
     return `
         <footer class="footer">
 
-            <h3>AI House Planner</h3>
+            <h3>ROY DESIGNS</h3>
 
             <p>
                 Build your dream house using AI powered planning,
@@ -10,7 +10,7 @@ function Footer() {
             </p>
 
             <p>
-                © 2026 AI House Planner Startup
+                © 2026 ROY DESIGNS. All rights reserved.
             </p>
 
         </footer>

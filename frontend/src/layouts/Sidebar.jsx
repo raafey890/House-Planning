@@ -36,9 +36,16 @@ const Sidebar = ({ isMobileOpen, setMobileOpen }) => {
             
             <aside className={`sidebar ${isMobileOpen ? 'mobile-open' : ''}`}>
                 <div className="sidebar-header">
-                    <Link to="/dashboard" className="sidebar-brand">
-                        <Box size={24} color="var(--color-primary)" />
-                        <span className="sidebar-brand-text">AI House Planner</span>
+                    <Link to="/dashboard" className="sidebar-brand" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
+                        <Box size={24} color="#C6A46A" />
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <span className="sidebar-brand-text" style={{ fontSize: '1rem', fontWeight: 700, letterSpacing: '0.12em', color: 'var(--color-primary)' }}>
+                                ROY DESIGNS
+                            </span>
+                            <span style={{ fontSize: '0.58rem', color: '#C6A46A', letterSpacing: '0.06em', textTransform: 'uppercase', fontWeight: 600 }}>
+                                AI House Planning
+                            </span>
+                        </div>
                     </Link>
                 </div>
 

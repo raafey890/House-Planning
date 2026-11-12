@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     FLOOR_PLAN_ENGINE: str = "deterministic"
     PORT: int = 8000
     ENVIRONMENT: str = "development"
+    CORS_ORIGINS: str = "http://localhost:5173,http://127.0.0.1:5173"
 
     class Config:
         env_file = ".env"

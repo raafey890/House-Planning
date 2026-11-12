@@ -60,6 +60,8 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
             )
         return user_id
         
+    except HTTPException:
+        raise
     except jwt.PyJWKClientError as e:
         print(f"Auth Error: JWKS client error - {str(e)}")
         raise HTTPException(

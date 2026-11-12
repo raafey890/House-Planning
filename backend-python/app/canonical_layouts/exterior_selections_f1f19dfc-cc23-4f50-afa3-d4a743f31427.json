@@ -1,0 +1,61 @@
+{
+  "project_id": "f1f19dfc-cc23-4f50-afa3-d4a743f31427",
+  "selection": {
+    "project_id": "f1f19dfc-cc23-4f50-afa3-d4a743f31427",
+    "design_id": "ext_min_01",
+    "design_name": "Pure White Minimalist Cube",
+    "category": "minimalist",
+    "style": "Minimalist",
+    "colors": {
+      "primary_wall": "#FFFDD0",
+      "secondary_wall": "#F5F2EB",
+      "accent_wall": "#5C4033",
+      "front_facade": "#FFFDD0",
+      "boundary_wall": "#F5F2EB",
+      "boundary_gate": "#4B3621",
+      "door": "#4B3621",
+      "window_frame": "#3E342B",
+      "window_glass_tint": "#7DD3FC",
+      "railing": "#3E342B",
+      "roof_parapet": "#5C4033",
+      "exterior_trims": "#3E342B"
+    },
+    "materials": {
+      "finish_type": "silicone_mineral_stucco",
+      "cladding_type": "none",
+      "door_material": "flush_white_laminate",
+      "railing_material": "toughened_glass"
+    },
+    "architectural_elements": {},
+    "lighting": {
+      "style": "architectural_grazers",
+      "fixture_count": 6
+    },
+    "landscaping": {
+      "greenery_level": "moderate",
+      "boundary_wall_style": "matching_plaster",
+      "motorized_gate": true
+    },
+    "boundary_wall": {},
+    "compatibility_status": "compatible",
+    "compatibility_notes": [
+      "Optimal Floor Match: Fully designed for 2-floor configuration (G+1).",
+      "Excellent Frontage: Plot width 30ft comfortably fits the required 25ft facade."
+    ],
+    "additional_cost": 159775.73,
+    "cost_breakdown": {
+      "exterior_paint_upgrade": 33103.73,
+      "facade_cladding_and_louvers": 0.0,
+      "doors_and_windows_upgrade": 18000.0,
+      "balcony_railing_upgrade": 25272.0,
+      "exterior_architectural_lighting": 20400.0,
+      "boundary_wall_and_gate": 35000.0,
+      "landscaping_and_pavers": 28000.0,
+      "total": 159775.73
+    },
+    "created_at": null,
+    "updated_at": "2026-10-18T07:20:10.301807"
+  },
+  "total_exterior_cost": 159775.73,
+  "updated_at": "2026-10-18T07:20:10.553307"
+}

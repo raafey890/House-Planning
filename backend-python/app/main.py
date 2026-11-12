@@ -7,10 +7,18 @@ from app.core.config import settings
 app = FastAPI(title="AI House Planner - Geometry & Planning Engine")
 
 allowed_origins = [o.strip() for o in settings.CORS_ORIGINS.split(",") if o.strip()]
+default_origins = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:3000",
+    "https://house-planning.onrender.com",
+]
+origins = list(set(allowed_origins + default_origins))
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=allowed_origins if allowed_origins else ["http://localhost:5173", "http://127.0.0.1:5173"], 
+    allow_origins=origins,
+    allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -32,6 +40,7 @@ def verify_auth(user_id: str = Depends(get_current_user)):
         "user_id": user_id
     }
 
+@app.get("/")
 @app.get("/health")
 @app.get("/api/health")
 def health_check():
